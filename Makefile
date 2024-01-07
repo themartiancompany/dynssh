@@ -19,10 +19,10 @@ install: install-scripts install-doc
 
 install-scripts:
 
-        install -vDm 755 dynssh/dynssh.sh "$(BIN_DIR)/dynssh"
+	install -vDm 755 dynssh/dynssh.sh "$(BIN_DIR)/dynssh"
 
 install-doc:
 
-        install -vDm 644 $(DOC_FILES) -t $(DOC_DIR)
+	install -vDm 644 $(DOC_FILES) -t $(DOC_DIR)
 
 .PHONY: check install install-doc install-scripts shellcheck
