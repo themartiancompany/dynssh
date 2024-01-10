@@ -44,6 +44,8 @@ _globals() {
   _override_device=""
   _override_user=""
   _override_port=""
+  _override_verbose=""
+  _host=""
 }
 
 # Local ssh resolver
@@ -330,14 +332,31 @@ _read_conf() {
       1
 }
 
+# Show an ERROR message then exit with status
+# $1: message string
+# $2: exit code number (with 0 does not exit)
+_msg_error() {
+  local \
+    _msg="${1}" \
+    _error=${2}
+  printf \
+    '[%s] ERROR: %s\n' \
+    "${app_name}" \
+    "${_msg}" >&2
+  if (( _error > 0 )); then
+    exit \
+      "${_error}"
+  fi
+}
+
 _globals
 
 while getopts 'd:u:p:v:h?' arg; do
   case "${arg}" in
-    d) override_device="${OPTARG}" ;;
-    u) override_user="${OPTARG}" ;;
-    p) override_port="${OPTARG}" ;;
-    v) override_verbose="${OPTARG}" ;;
+    d) _override_device="${OPTARG}" ;;
+    u) _override_user="${OPTARG}" ;;
+    p) _override_port="${OPTARG}" ;;
+    v) _override_verbose="${OPTARG}" ;;
     h|?) _usage ;;
     *)
         _msg_error \
@@ -347,8 +366,13 @@ while getopts 'd:u:p:v:h?' arg; do
   esac
 done
 
-shift \
-  $((OPTIND - 1))
+shift $((OPTIND - 1))
+
+if (( $# < 1 )); then
+  _msg_error \
+    "No host specified."
+  _usage
+fi
 
 _host="${1}"
 shift 1
