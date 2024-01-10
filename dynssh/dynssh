@@ -302,6 +302,21 @@ _read_conf() {
       1
 }
 
+while getopts 'p:h?' arg; do
+  case "${arg}" in
+    p) override_pub="${OPTARG}" ;;
+    h|?) _usage ;;
+    *)
+        _msg_error \
+          "Invalid argument '${arg}'" 0
+        _usage
+        ;;
+  esac
+done
+
+shift \
+  $((OPTIND - 1))
+
 _host="${1}"
 _dev="${2}"
 _user="${3}"
