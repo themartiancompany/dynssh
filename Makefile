@@ -19,7 +19,7 @@ install: install-scripts install-doc
 
 install-scripts:
 
-	install -vDm 755 dynssh/dynssh.sh "$(BIN_DIR)/dynssh"
+	install -vDm 755 dynssh/dynssh "$(BIN_DIR)/dynssh"
 
 install-doc:
 
