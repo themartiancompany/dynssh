@@ -109,7 +109,7 @@ _dynssh() {
   _msg=(
     "Connecting to user ${_user} at ${_host}"
     "on ${_hostname} and port ${_port}")
-  echoz \
+  echo \
     "${_msg[*]}"
   _msg=(
     "Command: ${_args[@]}")
