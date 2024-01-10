@@ -18,6 +18,34 @@ app_name="$( \
   basename \
     "${BASH_SOURCE[0]}")"
 
+_globals() {
+  set -e -u
+  shopt -s extglob
+
+  # Control the environment
+  umask \
+    0022
+  export \
+    LC_ALL="C.UTF-8"
+  # LC_ALL=C.UTF-8, unlike LC_ALL=C, does not override LANGUAGE.
+  # See https://sourceware.org/bugzilla/show_bug.cgi?id=16621 \
+  # and https://savannah.gnu.org/bugs/?62815
+  [[ -v LANGUAGE ]] && \
+    unset \
+      LANGUAGE
+  [[ -v SOURCE_DATE_EPOCH ]] || \
+    printf \
+      -v \
+        SOURCE_DATE_EPOCH \
+        '%(%s)T' \
+        -1
+  export \
+    SOURCE_DATE_EPOCH
+  _override_device=""
+  _override_user=""
+  _override_port=""
+}
+
 # Local ssh resolver
 # $1: hostname of the device to connect
 # $2: network device name
@@ -302,9 +330,14 @@ _read_conf() {
       1
 }
 
-while getopts 'p:h?' arg; do
+_globals
+
+while getopts 'd:u:p:v:h?' arg; do
   case "${arg}" in
-    p) override_pub="${OPTARG}" ;;
+    d) override_device="${OPTARG}" ;;
+    u) override_user="${OPTARG}" ;;
+    p) override_port="${OPTARG}" ;;
+    v) override_verbose="${OPTARG}" ;;
     h|?) _usage ;;
     *)
         _msg_error \
@@ -318,36 +351,44 @@ shift \
   $((OPTIND - 1))
 
 _host="${1}"
-_dev="${2}"
-_user="${3}"
-_port="${4}"
-shift 4
+shift 1
 _args=(
   "$@"
 )
 
-[[ "${_dev}" == "" ]] && \
-  _dev='wlan0' && \
+[[ "${_override_dev}" == "" ]] && \
+  _override_dev='wlan0' && \
   echo "Info: connecting on ${_dev}"
 
-[[ "${_user}" == "" ]] || \
+[[ "${_override_user}" == "" ]] || \
 [ ! -n "${TERMUX_VERSION}" ] && \
-  _user='dev' && \
+  _override_user='dev' && \
   echo "Info: connecting with user ${_user}"
 
-[[ "${_port}" == "" ]] && \
-  _port='2222' && \
-  echo "Info: connecting on port ${_port}"
+[[ "${_override_port}" == "" ]] && \
+  _override_port='2222' && \
+  echo "Info: connecting on port ${_override_port}"
 
 [[ "${_host}" == "" ]] && \
-  echo "Usage: ${app_name} <host> <device>" && \
+  echo \
+    "Usage:" && \
+  echo \
+    "${app_name} [-d <network_device>]" && \
+  echo \
+    "            [ -u <user>]" && \
+  echo \
+    "            [ -p <port>]" && \
+  echo \
+    "            [ -v <bool>]" && \
+  echo \
+    "              <device>" && \
   exit 1
 
 _dynssh \
   "${_host}" \
-  "${_dev}" \
-  "${_user}" \
-  "${_port}" \
+  "${_override_dev}" \
+  "${_override_user}" \
+  "${_override_port}" \
   "${_args[@]}"
 
 # vim:set sw=2 sts=-1 et:
