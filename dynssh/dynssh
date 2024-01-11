@@ -113,7 +113,7 @@ _dynssh() {
       1
   _msg=(
     "${_dev} is on subnet"
-    "${ns}.0")
+    "${_ns}.0")
   _read_conf \
     "${_dev}"
   _hostname="$( \
