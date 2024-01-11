@@ -44,8 +44,9 @@ _globals() {
   _override_device=""
   _override_user=""
   _override_port=""
-  _override_verbose=""
+  _override_verbose="false"
   _host=""
+  _device="wlan0"
 }
 
 # Local ssh resolver
@@ -332,6 +333,61 @@ _read_conf() {
       1
 }
 
+# Show help usage, with an exit status.
+# $1: exit status number.
+_usage() {
+    IFS='' read -r -d '' usagetext <<ENDUSAGETEXT || true
+usage: ${app_name} [options] <host>
+  options:
+     -d <device>      Specify network device
+                      Default: '${_device}'
+     -C <file>        pacman configuration file.
+                      Default: '${pacman_conf}'
+     -D <install_dir> Set an install_dir. All files will by located here.
+                      Default: '${install_dir}'
+                      NOTE: Max 8 characters, use only [a-z0-9]
+     -L <label>       Set the ISO volume label
+                      Default: '${iso_label}'
+     -P <publisher>   Set the ISO publisher
+                      Default: '${iso_publisher}'
+     -c [cert ..]     Provide certificates for codesigning of netboot artifacts
+                      Multiple files are provided as quoted, space delimited list.
+                      The first file is considered as the signing certificate,
+                      the second as the key.
+     -g <gpg_key>     Set the PGP key ID to be used for signing the rootfs image.
+                      Passed to gpg as the value for --default-key
+     -G <mbox>        Set the PGP signer (must include an email address)
+                      Passed to gpg as the value for --sender
+     -H <gpg_home>    Set the gpg home directory.
+     -h               This message
+     -m [mode ..]     Build mode(s) to use (valid modes are: 'bootstrap',
+                      'dongle', 'iso' and 'netboot').
+                      Multiple build modes are provided as quoted, space delimited list.
+     -o <out_dir>     Set the output directory
+                      Default: '${out_dir}'
+     -p [package ..]  Package(s) to install.
+                      Multiple packages are provided as quoted, space delimited list.
+     -v               Enable verbose output
+     -w <work_dir>    Set the working directory (can't be a bind mount).
+                      Default: '${work_dir}'
+
+  profile_dir:        Directory of the archiso profile to build
+ENDUSAGETEXT
+    printf '%s' "${usagetext}"
+    exit "${1}"
+}
+
+_msg_info() {
+  local \
+    _msg=()
+  _msg=(  
+    "$@"
+  )
+  [[ "${_override_verbose}" == "true" ]] && \
+    echo \
+      "${app_name} INFO: ${_msg[*]}"
+}
+
 # Show an ERROR message then exit with status
 # $1: message string
 # $2: exit code number (with 0 does not exit)
@@ -381,17 +437,20 @@ _args=(
 )
 
 [[ "${_override_dev}" == "" ]] && \
-  _override_dev='wlan0' && \
-  echo "Info: connecting on ${_dev}"
+  _override_dev="${_device}" && \
+  _msg_info \
+    "connecting on device '${_override_device}'"
 
 [[ "${_override_user}" == "" ]] || \
 [ ! -n "${TERMUX_VERSION}" ] && \
-  _override_user='dev' && \
-  echo "Info: connecting with user ${_user}"
+  _override_user="${_user}" && \
+  _msg_info \
+    "connecting with user ${_override_user}"
 
 [[ "${_override_port}" == "" ]] && \
-  _override_port='2222' && \
-  echo "Info: connecting on port ${_override_port}"
+  _override_port="${_port}" && \
+  _msg_info \
+    "connecting on port ${_override_port}"
 
 [[ "${_host}" == "" ]] && \
   echo \
