@@ -343,7 +343,7 @@ _usage() {
 usage: ${app_name} [options] <host>
   options:
      -d <device>      Specify network device
-                      Default: '${_device}'
+                      Default: '${_dev}'
      -u <user>        user to connect to.
                       Default: '${_user}'
      -p <port>        Connect through a specific port.
@@ -436,21 +436,6 @@ _args=(
   _override_port="${_port}" && \
   _msg_info \
     "connecting on port ${_override_port}"
-
-[[ "${_host}" == "" ]] && \
-  echo \
-    "Usage:" && \
-  echo \
-    "${app_name} [-d <network_device>]" && \
-  echo \
-    "            [ -u <user>]" && \
-  echo \
-    "            [ -p <port>]" && \
-  echo \
-    "            [ -v <bool>]" && \
-  echo \
-    "              <device>" && \
-  exit 1
 
 _dynssh \
   "${_host}" \
