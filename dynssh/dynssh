@@ -41,12 +41,12 @@ _globals() {
         -1
   export \
     SOURCE_DATE_EPOCH
-  _override_device=""
+  _override_dev=""
   _override_user=""
   _override_port=""
   _override_verbose=""
   _host=""
-  _device="wlan0"
+  _dev="wlan0"
   _user="dev"
   _port="2222"
   _verbose="false"
@@ -393,7 +393,7 @@ _globals
 
 while getopts 'd:u:p:v:h?' arg; do
   case "${arg}" in
-    d) _override_device="${OPTARG}" ;;
+    d) _override_dev="${OPTARG}" ;;
     u) _override_user="${OPTARG}" ;;
     p) _override_port="${OPTARG}" ;;
     v) _override_verbose="${OPTARG}" ;;
@@ -422,9 +422,9 @@ _args=(
 )
 
 [[ "${_override_dev}" == "" ]] && \
-  _override_dev="${_device}" && \
+  _override_dev="${_dev}" && \
   _msg_info \
-    "connecting on device '${_override_device}'"
+    "connecting on device '${_override_dev}'"
 
 [[ "${_override_user}" == "" ]] || \
 [ ! -n "${TERMUX_VERSION}" ] && \
