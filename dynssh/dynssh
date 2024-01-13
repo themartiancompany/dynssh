@@ -74,7 +74,7 @@ _dynssh() {
     "$@")
   _sshcfg="${HOME}/.config/dynssh/ssh.config"
   [[ $(ifconfig \
-         -a | \
+         -a  | \
          grep \
            "${_dev}") ]] && \
     _address="$( \
@@ -84,14 +84,13 @@ _dynssh() {
       _msg=(
 	"${_dev} is not connected"
         "to a network.") && \
-      echo \
-        "${_msg[*]}" && \
-      return \
+      _msg_error \
+        "${_msg[*]}" \
         1
   _msg=(
     "${_dev} has address"
     "${_address}")
-  echo \
+  _msg_info \
     "${_msg[*]}"
   _ns="$( \
     _get_subnet \
@@ -99,17 +98,15 @@ _dynssh() {
   [[ "$(_confirm_subnet \
           "${_dev}" \
           "${_ns}")" != "" ]] && \
-    echo \
-      "Error: anomalous behaviour" && \
-    return \
+    _msg_error \
+      "anomalous behaviour" \
       1
   [[ "${_ns}" == "" ]] && \
     _msg=(
       "${_dev} is not connected"
       "to a network.") && \
-    echo \
-      "${_msg[*]}" && \
-    return \
+    _msg_error \
+      "${_msg[*]}" \
       1
   _msg=(
     "${_dev} is on subnet"
@@ -124,9 +121,8 @@ _dynssh() {
 	  -F "=" \
 	  '{print $2}')"
   [[ "${_hostname}" == "" ]] && \
-    echo \
-      "Error: No address configured for ${_host}" && \
-    exit \
+    _msg_error \
+      "No address configured for ${_host}" \
       1
   _port="$( \
     echo \
@@ -141,23 +137,39 @@ _dynssh() {
         -F ":" \
 	'{print $1}')"
   _msg=(
-    "Connecting to user ${_user} at ${_host}"
-    "on ${_hostname} and port ${_port}")
-  echo \
+    "connecting to ${_user}@${_host}:${_port}"
+    )
+  _msg_info \
     "${_msg[*]}"
   _msg=(
-    "Command: ${_args[@]}")
-  echo \
+    "args: ${_args[@]}")
+  _msg_info \
     "${_msg[*]}"
   _ssh_conf \
     "${_host}" \
     "${_ns}.${_hostname}" \
     "${_user}" \
     "${_port}"
+  # _connection_test
   ssh \
     -F "${_sshcfg}" \
     "${_host}" \
     "${_args[@]}"
+}
+
+_connection_test() {
+  if ssh \
+         -q \
+         -F "${_sshcfg}" \
+         -o StrictHostKeyChecking=no \
+         -o ConnectTimeOut=5 \
+         "${_host}" \
+         'exit 0'; then
+    return
+  fi
+  _msg_error \
+    "can't connect to host '${_host}" \
+    1
 }
 
 # Writes SSH configuration
@@ -250,6 +262,7 @@ _check_conf() {
     _address \
     _dir \
     _host \
+    _msg=() \
     _perm
   _dir="${HOME}/.config"
   _conf="${_dir}/${app_name}/localhosts.cfg"
@@ -257,39 +270,40 @@ _check_conf() {
     "Configuration file:"
     "${_conf}"
   )
-  echo \
+  _msg_info \
     "${_msg[*]}"
-  [ ! -e  "${_conf}" ] && \
-    echo \
+  if [ ! -e  "${_conf}" ]; then
+    _msg_info \
       "$( \
         basename \
-          "${_conf}") does not exist" && \
+          "${_conf}") does not exist"
     mkdir \
       -p \
       "$(dirname \
-           "${_conf}")" && \
+           "${_conf}")"
     echo \
       "# values go from 2 to 254" >> \
-      "${_conf}" && \
+      "${_conf}"
     echo \
       "# device=111" >> \
-      "${_conf}" && \
-    _input_credentials && \
+      "${_conf}"
+    _input_credentials
     _address="$( \
       _get_address \
-        "${_dev}")" && \
+        "${_dev}")"
     echo \
       "${_host}=${_address##*.}:${_port}" >> \
       "${_conf}"
-
+  fi
   _perm="$( \
     stat \
       -c '%a' \
       "${_conf}")"
-  [[ "${_perm}" != "700" ]] && \
+  if [[ "${_perm}" != "700" ]]; then
     chmod \
       700 \
       "${_conf}"
+  fi
 }
 
 _input_credentials() {
@@ -329,11 +343,11 @@ _read_conf() {
         -e "/# */d" | \
 	grep \
           "=" )"
-  [[ "${_cfg}" == '' ]] && \
-    echo \
-      "ERROR: empty configuration file!" && \
-    return \
+  if [[ "${_cfg}" == '' ]]; then
+    _msg_error \
+      "empty configuration file!" \
       1
+  fi
 }
 
 # Show help usage, with an exit status.
@@ -365,11 +379,13 @@ _msg_info() {
   _msg=(  
     "$@"
   )
-  [[ "${_override_verbose}" == "true" ]] && \
+  if [[ "${_override_verbose}" == "true" ]]; then
     printf \
       '[%s] INFO: %s\n' \
       "${app_name}" \
-      "${_msg[*]}" >&2
+      "${_msg[*]}" # >&2
+  fi
+  return
 }
 
 # Show an ERROR message then exit with status
@@ -424,18 +440,18 @@ _args=(
 [[ "${_override_dev}" == "" ]] && \
   _override_dev="${_dev}" && \
   _msg_info \
-    "connecting on device '${_override_dev}'"
+    "using default device '${_override_dev}'"
 
 [[ "${_override_user}" == "" ]] || \
 [ ! -n "${TERMUX_VERSION}" ] && \
   _override_user="${_user}" && \
   _msg_info \
-    "connecting with user ${_override_user}"
+    "using default user ${_override_user}"
 
 [[ "${_override_port}" == "" ]] && \
   _override_port="${_port}" && \
   _msg_info \
-    "connecting on port ${_override_port}"
+    "using default port ${_override_port}"
 
 _dynssh \
   "${_host}" \
