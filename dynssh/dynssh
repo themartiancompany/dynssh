@@ -71,7 +71,7 @@ _dynssh() {
   shift \
     4
   _args=(
-    "$@")
+    "${@}")
   _sshcfg="${HOME}/.config/dynssh/ssh.config"
   [[ $(ifconfig \
          -a  | \
