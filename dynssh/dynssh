@@ -414,7 +414,7 @@ while getopts 'd:u:p:v:h?' arg; do
     d) _override_dev="${OPTARG}" ;;
     u) _override_user="${OPTARG}" ;;
     p) _override_port="${OPTARG}" ;;
-    v) _override_verbose="${OPTARG}" ;;
+    v) _override_verbose="true" ;;
     h|?) _usage 0 ;;
     *)
         _msg_error \
