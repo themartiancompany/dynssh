@@ -41,6 +41,8 @@ _globals() {
         -1
   export \
     SOURCE_DATE_EPOCH
+  [[ -v TERMUX_VERSION ]] && \
+    TERMUX_VERSION=""
   _override_dev=""
   _override_user=""
   _override_port=""
