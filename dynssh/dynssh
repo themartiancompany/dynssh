@@ -230,10 +230,13 @@ _confirm_subnet() {
     return
   [[ "${_ns}" != \
      "${_confirm}" ]] && \
-    echo \
-      "ifconfig: ${_ns}" && \
-    echo \
-      "route: ${_confirm}"
+    _out="$( \
+      printf \
+        "%s\n%s" \
+        "ifconfig: ${_ns}" \
+        "route: ${_confirm}")"
+    _msg_warning \
+      "${_out}"
 }
 
 _get_address() {
@@ -389,6 +392,21 @@ _msg_info() {
   fi
   return
 }
+
+# Show a WARNING message
+# $1: message string
+_msg_warning() {
+  local \
+    _msg=()
+  _msg=(
+    "${1}"
+  )
+  _printf \
+    '[%s] WARNING: %s\n' \
+    "${app_name}" \
+    "${_msg[*]}" >&2
+}
+
 
 # Show an ERROR message then exit with status
 # $1: message string
