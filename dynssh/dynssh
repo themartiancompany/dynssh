@@ -425,6 +425,55 @@ _msg_error() {
   fi
 }
 
+# Colorized print
+_printf() {
+  local \
+    _args=()
+    _pygmentize_opts=()
+  _pygmentize_opts=(
+    -g
+    -O style=emacs
+  )
+  _args=(
+      "$@"
+  )
+  # shellcheck disable=SC2059
+  _sho \
+    "$( \
+      printf \
+        "${_args[@]}")" \
+    "${_pygmentize_opts[@]}"
+}
+
+# Colorized Display function
+_sho() {
+  local \
+    _text="${1}" \
+    _pygmentize
+  _pygmentize="$( \
+    command \
+      -v \
+      "pygmentize"{,2} | \
+      head \
+        -n \
+	1)"
+  shift
+  _pygmentize_opts=(
+    "$@"
+  )
+  [[ "${color}" == "y" ]] && \
+  [[ "${_pygmentize}" != "" ]] && \
+    echo \
+      "${_text}" | 
+      "${_pygmentize}" \
+        "${_pygmentize_opts[@]}" && \
+    return
+  printf \
+    "%s\n" \
+    "${_text}"
+}
+
+
 _globals
 
 while getopts 'd:u:p:vh?' arg; do
