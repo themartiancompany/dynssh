@@ -409,7 +409,7 @@ _msg_error() {
 
 _globals
 
-while getopts 'd:u:p:v:h?' arg; do
+while getopts 'd:u:p:vh?' arg; do
   case "${arg}" in
     d) _override_dev="${OPTARG}" ;;
     u) _override_user="${OPTARG}" ;;
