@@ -1,35 +1,27 @@
 #!/usr/bin/env bash
 #
-# SPDX-License-Identifier: AGPL-3.0
-
-_path="$( \
-  export \
-    _OLDPWD="$(pwd)" && \
-    cd \
-      "$(dirname \
-           "${BASH_SOURCE[0]}")" && \
-    echo\
-      "$(pwd)" && \
-    cd "${_OLDPWD}")" && \
-    unset \
-      _OLDPWD
-
-app_name="$( \
-  basename \
-    "${BASH_SOURCE[0]}")"
+# SPDX-License-Identifier: AGPL-3.0-or-later
 
 _globals() {
-  set -e -u
-  shopt -s extglob
-
+  local \
+    _OLDPWD
+  set \
+    -e \
+    -u
+  shopt \
+    -s \
+      extglob
   # Control the environment
   umask \
     0022
   export \
     LC_ALL="C.UTF-8"
-  # LC_ALL=C.UTF-8, unlike LC_ALL=C, does not override LANGUAGE.
-  # See https://sourceware.org/bugzilla/show_bug.cgi?id=16621 \
-  # and https://savannah.gnu.org/bugs/?62815
+  # LC_ALL=C.UTF-8, unlike LC_ALL=C,
+  # does not override LANGUAGE.
+  # See 
+  # https://sourceware.org/bugzilla/show_bug.cgi?id=16621
+  # and 
+  # https://savannah.gnu.org/bugs/?62815
   [[ -v LANGUAGE ]] && \
     unset \
       LANGUAGE
@@ -37,21 +29,319 @@ _globals() {
     printf \
       -v \
         SOURCE_DATE_EPOCH \
-        '%(%s)T' \
-        -1
+      '%(%s)T' \
+      -1
   export \
     SOURCE_DATE_EPOCH
+  
+  # Get script path
+  # shellcheck disable=SC2005
+  _path="$( \
+    _OLDPWD="$( \
+      pwd)" && \
+    export \
+      _OLDPWD && \
+    cd \
+      "$( \
+	dirname \
+          "${BASH_SOURCE[0]}")" && \
+    echo \
+      "$(pwd)" && \
+    cd \
+      "${_OLDPWD}" && \
+    unset \
+      _OLDPWD)"
+  unset \
+    _OLDPWD
+  # Set application name
+  # from the script's file name
+  app_name="${0##*/}"
   [[ ! -v TERMUX_VERSION ]] && \
     TERMUX_VERSION=""
-  _override_dev=""
-  _override_user=""
-  _override_port=""
-  _override_verbose=""
-  _host=""
-  _dev="wlan0"
-  _user="dev"
-  _port="2222"
-  _verbose="false"
+}
+
+_global_variables() {
+  target_host=""
+  target_device=""
+  target_user=""
+  target_port=""
+  color=""
+  quiet=""
+}
+
+# Show an INFO message
+# $1: message string
+_msg_info() {
+  local \
+    _msg=(
+      "$@"
+    ) \
+    _fmt_line=() \
+    _line
+  [[ "${quiet}" == "y" ]] || \
+    for _line \
+      in "${_msg[@]}"; do
+      # _fmt_line+=(
+      #   "$( \
+      #     printf \
+      #       '[%s] INFO: %s\n' \
+      #       "${app_name}" \
+      #       "${_line}")"
+      # )
+      _printf \
+        '[%s] INFO: %s\n' \
+        "${app_name}" \
+        "${_line}"
+    done
+    # _printf \
+    #   "${_fmt_line[*]}"
+}
+
+# Show a WARNING message
+# $1: message string
+_msg_warning() {
+  local \
+    _msg=()
+  _msg=(
+    "${1}"
+  )
+  _printf \
+    '[%s] WARNING: %s\n' \
+    "${app_name}" \
+    "${_msg[*]}" >&2
+}
+
+# Show an ERROR message then exit with status
+# $1: message string
+# $2: exit code number (with 0 does not exit)
+_msg_error() {
+  local \
+    _msg=(
+      "${1}"
+    ) \
+    _error=${2}
+  _printf \
+    '[%s] ERROR: %s\n' \
+    "${app_name}" \
+    "${_msg[*]}" >&2
+  if (( _error > 0 )); then
+    exit "${_error}"
+  fi
+}
+
+# Sets object string attributes
+# $1: object
+# $2: an object string attribute
+# $3: a value
+_set() {
+  local \
+    _obj="${1}" \
+    _var="${2}" \
+    _value="${3}" \
+    _target \
+    _ass_target \
+    _ass_type
+  _target="${_obj}_${_var}"
+  _ass_target="${_obj}[${_var}]"
+  _ass_type="$( \
+    _get_type \
+      "${_obj}")"
+  [[ "${_ass_type}" == "dict" ]] && \
+    _target="${_ass_target}"
+  printf \
+    -v "${_target}" \
+    "%s" \
+    "${_value}"
+}
+
+# Returns type ('string', 'list', 'dict') given
+# its name
+# $1: an object
+_get_type() {
+  local \
+    _obj="${1}" \
+    _type="string" \
+    _declare
+  _declare="$( \
+    declare \
+      -p \
+        "${_obj}" 2>&1)"
+  [[ \
+    "${_declare}" == \
+    *"declare:"*"${_obj}"*": not found" ]] && \
+    _type="undefined"
+  [[ \
+    "${_declare}" == \
+    "declare -A "* ]] && \
+    _type="dict"
+  [[ \
+    "${_declare}" == \
+    "typeset -a"* ]] && \
+    _type="array"
+  echo \
+    "${_type}"
+}
+
+# Returns an attribute value for a 
+# given object
+# $1: an object
+# $2: an object attribute
+_get() {
+  local \
+    _obj="${1}" \
+    _var="${2}" \
+    _ass_target \
+    _ass_type \
+    _msg \
+    _ref \
+    _type \
+    _target
+  _ass_target="${_obj}"
+  _target="${_obj}_${_var}"
+  _ref="${_target}[@]"
+  _ass_ref="${_obj}[${_var}]"
+  _type="$( \
+    _get_type \
+      "${_target}")"
+  _ass_type="$( \
+    _get_type \
+      "${_ass_target}")"
+  [[ "${_type}" == "undefined" ]] && \
+  [[ "${_ass_type}" == "undefined" ]] && \
+  [[ ! -v "${_ass_ref}" ]] && \
+    _msg=(
+      "Attribute '${_var}' is not defined"
+      "for object '${_obj}'") && \
+    _msg_error \
+      "${_msg[*]}" \
+      1
+  [[ "${_ass_type}" == "dict" ]] && \
+    if [[ -v "${_ass_ref}" ]]; then
+      _ref="${_ass_ref}"
+    fi
+  printf \
+    "%s\n" \
+    "${!_ref}"
+}
+
+_check_cmd(){
+  local \
+    _cmd="${1}" \
+    _cmd_var \
+    _flag="" \
+    _pkgs=()
+  shift \
+    1
+  _pkgs=(
+    "$@"
+  )
+  _cmd_var="$( \
+    printf \
+      "%s" \
+      "${_cmd}" | \
+      sed \
+        "s/-/_/g")"
+  command \
+     -v \
+     "${_cmd}" &> /dev/null && \
+    printf \
+      -v \
+        "_${_cmd_var}" \
+      "%s" \
+      "$( \
+        command \
+          -v \
+          "${_cmd}")" && \
+    _flag=true
+  [ -e "${_path}/${_cmd}" ] && \
+    printf \
+      -v \
+        "_${_cmd_var}" \
+      "%s" \
+      "${_path}/${_cmd}" && \
+    _flag=true
+  if [[ "${_flag}" != "true" ]]; then
+    if [[ "${_pkgs[*]}" != "" ]]; then
+      _cmd="${_pkgs[*]}"
+    fi
+    _msg_error \
+      "Install ${_cmd}" \
+      1
+  fi
+}
+
+# Reassign an object variable
+# if an override variable is defined;
+# otherwise it defaults
+# to an input default.
+# $1: object
+# $2: variable
+# $3: default value
+_set_override() {
+  local \
+    _obj="${1}" \
+    _var="${2}" \
+    _default="${3}"
+  if [[ -v "override_${_obj}_${_var}" ]]; then
+    _set \
+      "${_obj}" \
+      "${_var}" \
+      "$( \
+        _get \
+	  "override_${_obj}" \
+          "${_var}")"
+  elif [[ -z \
+	    "$( \
+	      _get \
+	        "${_obj}" \
+                "${_var}")" ]]; then
+    _set \
+      "${_obj}" \
+      "${_var}" \
+      "${_default}"
+  fi
+}
+
+# Re-assign an object variable pointing to
+# a path if an override variable is defined,
+# otherwise it defaults to an input path
+# $1: object
+# $2: variable
+# $3: value (a path)
+_override_path() {
+  local \
+    _obj="${1}" \
+    _var="${2}" \
+    _value="${3}" \
+    _path
+  _path="$( \
+    realpath \
+      -q -- \
+      "${_value}" || \
+      true)"
+  [[ "${_path}" == "" ]] && \
+    _msg_error \
+      "${_value} is not a valid path." \
+      1
+  _set_override \
+    "${_obj}" \
+    "${_var}" \
+    "${_value}"
+  _set \
+    "${_obj}" \
+    "${_var}" \
+    "$( \
+      realpath -- \
+        "$( \
+	  _get \
+	    "${_obj}" \
+            "${_var}")")"
+}
+
+_requirements() {
+  _check_cmd \
+    "ssh" \
+    "openssh"
 }
 
 # Local ssh resolver
@@ -60,7 +350,7 @@ _globals() {
 _dynssh() {
   local \
     _host="${1}" \
-    _dev="${2}" \
+    _device="${2}" \
     _user="${3}" \
     _port="${4}" \
     _args=() \
@@ -78,19 +368,19 @@ _dynssh() {
   [[ $(ifconfig \
          -a  | \
          grep \
-           "${_dev}") ]] && \
+           "${_device}") ]] && \
     _address="$( \
       _get_address \
-        "${_dev}")"
+        "${_device}")"
   [[ "${_address}" == "" ]] && \
       _msg=(
-	"${_dev} is not connected"
+	"${_device} is not connected"
         "to a network.") && \
       _msg_error \
         "${_msg[*]}" \
         1
   _msg=(
-    "${_dev} has address"
+    "${_device} has address"
     "${_address}")
   _msg_info \
     "${_msg[*]}"
@@ -98,23 +388,23 @@ _dynssh() {
     _get_subnet \
       "${_address}")"
   [[ "$(_confirm_subnet \
-          "${_dev}" \
+          "${_device}" \
           "${_ns}")" != "" ]] && \
     _msg_error \
       "anomalous behaviour" \
       1
   [[ "${_ns}" == "" ]] && \
     _msg=(
-      "${_dev} is not connected"
+      "${_device} is not connected"
       "to a network.") && \
     _msg_error \
       "${_msg[*]}" \
       1
   _msg=(
-    "${_dev} is on subnet"
+    "${_device} is on subnet"
     "${_ns}.0")
   _read_conf \
-    "${_dev}"
+    "${_device}"
   _hostname="$( \
     echo \
       "${_cfg}" | \
@@ -211,7 +501,7 @@ _get_subnet() {
 
 _confirm_subnet() {
   local \
-    _dev="${1}" \
+    _device="${1}" \
     _ns="${2}" \
     _confirm \
     _no_route=()
@@ -222,7 +512,7 @@ _confirm_subnet() {
     _get_subnet \
       "$(route | \
            grep \
-	     "${_dev}" | \
+	     "${_device}" | \
 	     awk \
 	       '{print $1}')")"
   [[  "$(route)" == \
@@ -241,14 +531,14 @@ _confirm_subnet() {
 
 _get_address() {
   local \
-    _dev="${1}" \
+    _device="${1}" \
     _line
   _line="$( \
     ifconfig \
       -a | \
       grep \
         -Pn \
-        "${_dev}" | \
+        "${_device}" | \
         cut \
           -d":" \
           -f 1)"
@@ -295,7 +585,7 @@ _check_conf() {
     _input_credentials
     _address="$( \
       _get_address \
-        "${_dev}")"
+        "${_device}")"
     echo \
       "${_host}=${_address##*.}:${_port}" >> \
       "${_conf}"
@@ -330,7 +620,7 @@ _input_credentials() {
 
 _read_conf() {
   local \
-    _dev="${1}" \
+    _device="${1}" \
     _conf \
     _dir \
     _hostname=""
@@ -355,74 +645,104 @@ _read_conf() {
   fi
 }
 
+# Set defaults and, if present, overrides
+# from arch-grub command line option parameters
+_set_overrides() {
+  _set_override \
+    "target" \
+    "device" \
+    "wlan0"
+  _set_override \
+    "target" \
+    "user" \
+    "dev"
+  _set_override \
+    "target" \
+    "port" \
+    "2222"
+  if [[ -v override_quiet ]]; then
+    quiet="${override_quiet}"
+  elif [[ -z "${quiet}" ]]; then
+    quiet="y"
+  fi
+  if [[ -v override_color ]]; then
+    color="${override_color}"
+  elif [[ -z "${color}" ]]; then
+    color="n"
+  fi
+}
+
 # Show help usage, with an exit status.
 # $1: exit status number.
 _usage() {
-    IFS='' read -r -d '' usagetext <<ENDUSAGETEXT || true
-usage: ${app_name} [options] <host>
+  local \
+    _usage_text
+  IFS='' \
+    read \
+      -r \
+      -d '' \
+      _usage_text << \
+        ENDUSAGETEXT || true
+usage:
+  $(_get "app" "name")
+    [options]
+    <host>
+    [ssh options]
   options:
-     -d <device>      Specify network device
-                      Default: '${_dev}'
-     -u <user>        user to connect to.
-                      Default: '${_user}'
-     -p <port>        Connect through a specific port.
-                      Default: '${_port}'
-     -h               This message
-     -v               Enable verbose output
+     -d <device>          Specify network device
+                          Default: '$(_get "target" "dev")'
+     -u <user>            user to connect to.
+                          Default: '$(_get "target" "user")'
+     -p <port>            Connect through a specific port.
+                          Default: '$(_get "target" "port")'
+     -h                   This message.
+     -c                   Enable color output
+     -v                   Enable verbose output
 
-  host:               Host to connect to.
+  host:
+    Host to connect to.
 ENDUSAGETEXT
-    printf \
-      '%s' \
-      "${usagetext}"
-    exit "${1}"
-}
-
-_msg_info() {
-  local \
-    _msg=()
-  _msg=(  
-    "$@"
-  )
-  if [[ "${_override_verbose}" == "true" ]]; then
-    printf \
-      '[%s] INFO: %s\n' \
-      "${app_name}" \
-      "${_msg[*]}" # >&2
-  fi
-  return
-}
-
-# Show a WARNING message
-# $1: message string
-_msg_warning() {
-  local \
-    _msg=()
-  _msg=(
-    "${1}"
-  )
   _printf \
-    '[%s] WARNING: %s\n' \
-    "${app_name}" \
-    "${_msg[*]}" >&2
+    '%s\n' \
+    "${_usage_text}"
+  exit \
+    "${1}"
 }
 
-
-# Show an ERROR message then exit with status
-# $1: message string
-# $2: exit code number (with 0 does not exit)
-_msg_error() {
+_display_flags() {
   local \
-    _msg="${1}" \
-    _error="${2}"
-  printf \
-    '[%s] ERROR: %s\n' \
-    "${app_name}" \
-    "${_msg}" >&2
-  if (( _error > 0 )); then
-    exit \
-      "${_error}"
-  fi
+    _flags=(
+      "${1}"
+    ) \
+    _flag
+  for _flag \
+    in "${_flags[@]}"; do
+  _msg_info \
+    "                              ${_flag}"
+  done
+}
+
+# Shows configuration options.
+_show_config() {
+  local \
+    _build_date
+  TZ=UTC \
+    printf \
+      -v _build_date \
+      '%(%FT%R%z)T' \
+      "${SOURCE_DATE_EPOCH}"
+  _msg_info "${app_name} configuration"
+  _msg_info "          Connection date:   $(_get "_build" "date")"
+  _msg_info "                     Host:   $(_get "target" "host")"
+  _msg_info "                   Device:   $(_get "target" "device")"
+  _msg_info "                     User:   $(_get "target" "user")"
+  _msg_info "                     Port:   $(_get "target" "port")"
+  [[ "$(_get \
+          "ssh" \
+          "options")" != "" ]] && \
+    _msg_info \
+             "             SSH options:" && \
+    _display_flags                        "${ssh_options[@]}"
 }
 
 # Colorized print
@@ -473,60 +793,70 @@ _sho() {
     "${_text}"
 }
 
-
 _globals
-
-while getopts 'd:u:p:vh?' arg; do
-  case "${arg}" in
-    d) _override_dev="${OPTARG}" ;;
-    u) _override_user="${OPTARG}" ;;
-    p) _override_port="${OPTARG}" ;;
-    v) _override_verbose="true" ;;
-    h|?) _usage 0 ;;
+_global_variables
+_requirements
+while \
+  getopts \
+    'd:u:p:vh?' \
+    arg; do
+  case \
+    "${arg}" in
+    d) override_target_device="${OPTARG}" ;;
+    u) override_target_user="${OPTARG}" ;;
+    p) override_target_port="${OPTARG}" ;;
+    c) override_color="y" ;;
+    v) override_quiet="n" ;;
+    h|?) _set_overrides && \
+         _usage \
+           0 ;;
     *)
-        _msg_error \
-          "Invalid argument '${arg}'" 0
-        _usage 0
-        ;;
+    _msg_error \
+      "Invalid argument '${arg}'" \
+      0
+    _usage \
+      1
+    ;;
   esac
 done
-
-shift $((OPTIND - 1))
-
+shift \
+  $(( \
+    OPTIND - 1 \
+  ))
 if (( $# < 1 )); then
   _msg_error \
     "No host specified." \
     0
   _usage 0
 fi
-
-_host="${1}"
-shift 1
-_args=(
+_set \
+  "target" \
+  "host" \
+  "${1}"
+shift \
+  1
+ssh_options=(
   "$@"
 )
-
-[[ "${_override_dev}" == "" ]] && \
-  _override_dev="${_dev}" && \
-  _msg_info \
-    "using default device '${_override_dev}'"
-
-[[ "${_override_user}" == "" ]] || \
-[ ! -n "${TERMUX_VERSION}" ] && \
-  _override_user="${_user}" && \
-  _msg_info \
-    "using default user ${_override_user}"
-
-[[ "${_override_port}" == "" ]] && \
-  _override_port="${_port}" && \
-  _msg_info \
-    "using default port ${_override_port}"
-
+_set_overrides
+_show_config
 _dynssh \
-  "${_host}" \
-  "${_override_dev}" \
-  "${_override_user}" \
-  "${_override_port}" \
-  "${_args[@]}"
+  "$( \
+    _get \
+      "target" \
+      "host")" \
+  "$( \
+    _get \
+      "target" \
+      "device")" \
+  "$( \
+    _get \
+      "target" \
+      "user")" \
+  "$( \
+    _get \
+      "target" \
+      "port")" \
+  "${ssh_options[@]}"
 
 # vim:set sw=2 sts=-1 et:
