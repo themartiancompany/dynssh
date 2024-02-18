@@ -722,7 +722,7 @@ usage:
     [ssh options]
   options:
      -d <device>          Specify network device
-                          Default: '$(_get "target" "dev")'
+                          Default: '$(_get "target" "device")'
      -u <user>            user to connect to.
                           Default: '$(_get "target" "user")'
      -p <port>            Connect through a specific port.
