@@ -56,8 +56,9 @@ _globals() {
   # Set application name
   # from the script's file name
   app_name="${0##*/}"
-  [[ ! -v TERMUX_VERSION ]] && \
+  if [[ ! -v TERMUX_VERSION ]]; then
     TERMUX_VERSION=""
+  fi
 }
 
 _global_variables() {
