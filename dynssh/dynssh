@@ -412,6 +412,8 @@ _dynssh() {
   _msg=(
     "${_device} is on subnet"
     "${_ns}.0")
+  _msg_info \
+    "${_msg[*]}"
   _read_conf
   _hostname="$( \
     echo \
@@ -420,7 +422,6 @@ _dynssh() {
         awk \
 	  -F "=" \
 	  '{print $2}')"
-  echo "${_hostname}"
   [[ "${_hostname}" == "" ]] && \
     _msg_error \
       "No address configured for ${_host}" \
