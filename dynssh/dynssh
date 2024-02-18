@@ -443,12 +443,13 @@ _dynssh() {
     )
   _msg_info \
     "${_msg[*]}"
-  mksshconfig \
-    "${_sshcfg}" \
-    "${_host}" \
-    "${_ns}.${_hostname}" \
-    "${_user}" \
-    "${_port}"
+  [[ ! -e "${_sshcfg}" ]] && \
+    mksshconfig \
+      "${_sshcfg}" \
+      "${_host}" \
+      "${_ns}.${_hostname}" \
+      "${_user}" \
+      "${_port}"
   # _connection_test
   ssh \
     -F "${_sshcfg}" \
