@@ -61,6 +61,7 @@ _globals() {
   fi
 }
 
+# shellcheck disable=SC2034
 _global_variables() {
   target_host=""
   target_device=""
@@ -830,6 +831,7 @@ _sho() {
 _globals
 _global_variables
 _requirements
+# shellcheck disable=SC2034
 while \
   getopts \
     'd:u:p:cvh?' \
