@@ -341,9 +341,14 @@ _override_path() {
 }
 
 _requirements() {
+  local \
+    _pkg="ssh"
   _check_cmd \
-    "ssh" \
-    "openssh"
+    "${_pkg}" \
+    "open${_pkg}"
+  _check_cmd \
+    "mk${_pkg}config" \
+    "${_pkg}-utils"
 }
 
 # Local ssh resolver
@@ -437,11 +442,8 @@ _dynssh() {
     )
   _msg_info \
     "${_msg[*]}"
-  _msg=(
-    "args: ${_args[@]}")
-  _msg_info \
-    "${_msg[*]}"
-  _ssh_conf \
+  mksshconfig \
+    "${_sshcfg}" \
     "${_host}" \
     "${_ns}.${_hostname}" \
     "${_user}" \
@@ -466,32 +468,6 @@ _connection_test() {
   _msg_error \
     "can't connect to host '${_host}" \
     1
-}
-
-# Writes SSH configuration
-_ssh_conf() {
-  local \
-    _host="${1}" \
-    _hostname="${2}" \
-    _user="${3}" \
-    _port="${4}" \
-    _out \
-    _cfg_text=()
-  _out="${HOME}/.config/dynssh/ssh.config"
-  _cfg_text=(
-    "Host ${_host}"
-    "  HostName ${_hostname}"
-    "  Port ${_port}"
-    "  IdentityFile ${HOME}/.ssh/${_host}"
-    "  User ${_user}"
-  )
-  printf \
-    '%s\n' \
-    "${_cfg_text[@]}" > \
-    "${HOME}/.config/dynssh/ssh.config"
-  chmod \
-    700 \
-    "${_out}"
 }
 
 # Get subnet from IPv4 address
