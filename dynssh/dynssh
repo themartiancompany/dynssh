@@ -368,10 +368,8 @@ _dynssh() {
     "${@}")
   _sshcfg="${HOME}/.config/dynssh/ssh.config"
   [[ "$( \
-       echo \
-         "$( \
-           ifconfig \
-             -a)" | \
+       ifconfig \
+             -a | \
           grep \
             "${_device}")" != "" ]] && \
     _address="$( \
