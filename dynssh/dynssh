@@ -367,10 +367,13 @@ _dynssh() {
   _args=(
     "${@}")
   _sshcfg="${HOME}/.config/dynssh/ssh.config"
-  [[ $(ifconfig \
-         -a  | \
-         grep \
-           "${_device}") ]] && \
+  [[ "$( \
+       echo \
+         "$( \
+           ifconfig \
+             -a)" | \
+          grep \
+            "${_device}")" != "" ]] && \
     _address="$( \
       _get_address \
         "${_device}")"
@@ -624,6 +627,7 @@ _input_credentials() {
     while \
       [[ ! -v "_host" ]]; do
       read \
+        -r \
         _host
     done
   fi
@@ -646,6 +650,7 @@ _input_credentials() {
       [[ \
         "${_port}" == "" ]]; do
       read \
+        -r \
         _port
     done
   fi
