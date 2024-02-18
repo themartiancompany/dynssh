@@ -351,6 +351,33 @@ _requirements() {
     "${_pkg}-utils"
 }
 
+_ifconfig() {
+  local \
+    _out="" \
+    _nonetdev=() \
+    _msg=()
+  _nonetdev=(
+    "Warning: cannot open /proc/net/dev"
+    "(Permission denied). Limited output."
+  )
+  _stderr="$( \
+    ifconfig \
+      -a 2>&1)"
+  _out="$( \
+    ifconfig \
+      -a 2>&1)"
+  if [[ "${_stderr}" == *"${_nonetdev[*]}"* ]]; then
+    _out="$( \
+      echo \
+        "${_out}" | \
+        tail \
+          -n \
+            +2)"
+  fi
+  echo \
+    "${_out}"
+}
+
 # Local ssh resolver
 # $1: hostname of the device to connect
 # $2: network device name
@@ -370,15 +397,15 @@ _dynssh() {
   shift \
     4
   _args=(
-    "${@}")
+    "${@}"
+  )
   _sshcfg="${HOME}/.cache/dynssh/ssh.config"
   mkdir \
     -p \
     "$(dirname \
          "${_sshcfg}")"
   [[ "$( \
-       ifconfig \
-             -a | \
+       _ifconfig | \
           grep \
             "${_device}")" != "" ]] && \
     _address="$( \
@@ -487,6 +514,11 @@ _get_subnet() {
     "${_address%.*}"
 }
 
+_route() {
+  route \
+    2>&1
+}
+
 _confirm_subnet() {
   local \
     _device="${1}" \
@@ -498,25 +530,25 @@ _confirm_subnet() {
     "in this system.")
   _confirm="$( \
     _get_subnet \
-      "$(route | \
+      "$(_route | \
            grep \
 	     "${_device}" | 
            grep  \
              "${_ns}" | \
 	     awk \
 	       '{print $1}')")"
-  [[  "$(route)" == \
+  [[  "$(_route)" == \
       "${_no_route[*]}" ]] && \
     return
   if [[ "${_ns}" != \
      "${_confirm}" ]]; then
-    _out="$( \
-      printf \
-        "%s\n%s" \
-        "ifconfig: ${_ns}" \
-        "route: ${_confirm}")"
+    _msg=(
+      "Mismatch between 'ifconfig' (${_ns})"
+      "and 'route' (${_confirm:-None}) outputs."
+      "Cannot confirm subnet."
+    )
     _msg_warning \
-      "${_out}"
+      "${_msg[*]}"
   fi
 }
 
@@ -525,8 +557,7 @@ _get_address() {
     _device="${1}" \
     _line
   _line="$( \
-    ifconfig \
-      -a | \
+    _ifconfig | \
       grep \
         -Pn \
         "${_device}" | \
@@ -535,11 +566,12 @@ _get_address() {
           -f 1)"
   _line=$(( \
     _line + 1 ))
-  ifconfig \
-    -a | \
-      sed \
-        -n "${_line}p;" | \
-	awk '{print $2}'
+  _ifconfig | \
+    sed \
+      -n \
+        "${_line}p;" | \
+      awk \
+        '{print $2}'
 }
 
 _make_conf() {
