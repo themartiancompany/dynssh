@@ -380,8 +380,9 @@ _dynssh() {
         "${_msg[*]}" \
         1
   _msg=(
-    "${_device} has address"
-    "${_address}")
+    "device ${_device}"
+    "has address ${_address}"
+  )
   _msg_info \
     "${_msg[*]}"
   _ns="$( \
@@ -403,8 +404,7 @@ _dynssh() {
   _msg=(
     "${_device} is on subnet"
     "${_ns}.0")
-  _read_conf \
-    "${_device}"
+  _read_conf
   _hostname="$( \
     echo \
       "${_cfg}" | \
@@ -412,6 +412,7 @@ _dynssh() {
         awk \
 	  -F "=" \
 	  '{print $2}')"
+  echo "${_hostname}"
   [[ "${_hostname}" == "" ]] && \
     _msg_error \
       "No address configured for ${_host}" \
@@ -512,14 +513,16 @@ _confirm_subnet() {
     _get_subnet \
       "$(route | \
            grep \
-	     "${_device}" | \
+	     "${_device}" | 
+           grep  \
+             "${_ns}" | \
 	     awk \
 	       '{print $1}')")"
   [[  "$(route)" == \
       "${_no_route[*]}" ]] && \
     return
-  [[ "${_ns}" != \
-     "${_confirm}" ]] && \
+  if [[ "${_ns}" != \
+     "${_confirm}" ]]; then
     _out="$( \
       printf \
         "%s\n%s" \
@@ -527,6 +530,7 @@ _confirm_subnet() {
         "route: ${_confirm}")"
     _msg_warning \
       "${_out}"
+  fi
 }
 
 _get_address() {
@@ -551,12 +555,41 @@ _get_address() {
 	awk '{print $2}'
 }
 
+_make_conf() {
+  mkdir \
+    -p \
+    "$(dirname \
+         "${_conf}")"
+  echo \
+    "# values go from 2 to 254" >> \
+    "${_conf}"
+  echo \
+    "# device=111" >> \
+    "${_conf}"
+  [[ \
+    "$( \
+      command \
+        -v \
+        "hostnamectl")" != "" ]] && \
+    _host="$( \
+      hostnamectl \
+        hostname)"
+  _input_credentials
+  _address="$( \
+    _get_address \
+      "${_device}")"
+  echo \
+    "${_host}=${_address##*.}:${_port}" >> \
+    "${_conf}"
+}
+
 _check_conf() {
   local \
     _conf="${1}" \
     _address \
     _dir \
     _host \
+    _port \
     _msg=() \
     _perm
   _dir="${HOME}/.config"
@@ -568,27 +601,7 @@ _check_conf() {
   _msg_info \
     "${_msg[*]}"
   if [ ! -e  "${_conf}" ]; then
-    _msg_info \
-      "$( \
-        basename \
-          "${_conf}") does not exist"
-    mkdir \
-      -p \
-      "$(dirname \
-           "${_conf}")"
-    echo \
-      "# values go from 2 to 254" >> \
-      "${_conf}"
-    echo \
-      "# device=111" >> \
-      "${_conf}"
-    _input_credentials
-    _address="$( \
-      _get_address \
-        "${_device}")"
-    echo \
-      "${_host}=${_address##*.}:${_port}" >> \
-      "${_conf}"
+    _make_conf
   fi
   _perm="$( \
     stat \
@@ -602,25 +615,44 @@ _check_conf() {
 }
 
 _input_credentials() {
-  echo \
-    "enter name for this host:" && \
-  while \
-    [[ "${_host}" == "" ]]; do
-    read \
-      _host
-  done
-  echo \
-    "enter port for this host:" && \
-  while \
-    [[ "${_port}" == "" ]]; do
-    read \
-      _port
-   done
+  if [[ "${_host}" == "" ]]; then
+    printf \
+      "  %s\n" \
+      "enter name for this host:" && \
+    while \
+      [[ ! -v "_host" ]]; do
+      read \
+        _host
+    done
+  fi
+  printf \
+    -v \
+      "_port" \
+    "$( \
+      _get \
+        "target" \
+        "port")"
+  _msg_info \
+    "setting local port as target port ${_port}"
+  if \
+    [[ \
+      "${_port}" == "" ]]; then
+    printf \
+      "  %s\n" \
+      "enter port for this host:"
+    while \
+      [[ \
+        "${_port}" == "" ]]; do
+      read \
+        _port
+    done
+  fi
+  _msg_info \
+    "Set port ${_port}"
 }
 
 _read_conf() {
   local \
-    _device="${1}" \
     _conf \
     _dir \
     _hostname=""
@@ -737,12 +769,13 @@ _show_config() {
   _msg_info "                   Device:   $(_get "target" "device")"
   _msg_info "                     User:   $(_get "target" "user")"
   _msg_info "                     Port:   $(_get "target" "port")"
-  [[ "$(_get \
+  if [[ "$(_get \
           "ssh" \
           "options")" != "" ]] && \
     _msg_info \
-             "             SSH options:" && \
+             "             SSH options:"]]; then
     _display_flags                        "${ssh_options[@]}"
+  fi
 }
 
 # Colorized print
