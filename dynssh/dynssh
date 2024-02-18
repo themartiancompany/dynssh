@@ -475,9 +475,9 @@ _ssh_conf() {
     _user="${3}" \
     _port="${4}" \
     _out \
-    _cfg=()
+    _cfg_text=()
   _out="${HOME}/.config/dynssh/ssh.config"
-  _cfg=(
+  _cfg_text=(
     "Host ${_host}"
     "  HostName ${_hostname}"
     "  Port ${_port}"
@@ -486,7 +486,7 @@ _ssh_conf() {
   )
   printf \
     '%s\n' \
-    "${_cfg[@]}" > \
+    "${_cfg_text[@]}" > \
     "${HOME}/.config/dynssh/ssh.config"
   chmod \
     700 \
