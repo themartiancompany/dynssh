@@ -632,6 +632,7 @@ _input_credentials() {
   printf \
     -v \
       "_port" \
+    "%s\n" \
     "$( \
       _get \
         "target" \
