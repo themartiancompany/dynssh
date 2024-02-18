@@ -371,7 +371,7 @@ _dynssh() {
     4
   _args=(
     "${@}")
-  _sshcfg="${HOME}/.config/dynssh/ssh.config"
+  _sshcfg="${HOME}/.cache/dynssh/ssh.config"
   [[ "$( \
        ifconfig \
              -a | \
@@ -443,13 +443,15 @@ _dynssh() {
     )
   _msg_info \
     "${_msg[*]}"
-  [[ ! -e "${_sshcfg}" ]] && \
-    mksshconfig \
-      "${_sshcfg}" \
-      "${_host}" \
-      "${_ns}.${_hostname}" \
-      "${_user}" \
-      "${_port}"
+  rm \
+    -f \
+    "${_sshcfg}"
+  mksshconfig \
+    "${_sshcfg}" \
+    "${_host}" \
+    "${_ns}.${_hostname}" \
+    "${_user}" \
+    "${_port}"
   # _connection_test
   ssh \
     -F "${_sshcfg}" \
