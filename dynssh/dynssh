@@ -372,6 +372,10 @@ _dynssh() {
   _args=(
     "${@}")
   _sshcfg="${HOME}/.cache/dynssh/ssh.config"
+  mkdir \
+    -p \
+    "$(dirname \
+         "${_sshcfg}")"
   [[ "$( \
        ifconfig \
              -a | \
