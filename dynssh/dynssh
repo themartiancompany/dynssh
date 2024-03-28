@@ -486,18 +486,19 @@ _dynssh() {
   # _connection_test
   ssh \
     -F "${_sshcfg}" \
+    -o StrictHostKeyChecking=no \
     "${_host}" \
     "${_args[@]}"
 }
 
 _connection_test() {
   if ssh \
-         -q \
-         -F "${_sshcfg}" \
-         -o StrictHostKeyChecking=no \
-         -o ConnectTimeOut=5 \
-         "${_host}" \
-         'exit 0'; then
+       -q \
+       -F "${_sshcfg}" \
+       -o StrictHostKeyChecking=no \
+       -o ConnectTimeOut=5 \
+       "${_host}" \
+       'exit 0'; then
     return
   fi
   _msg_error \
