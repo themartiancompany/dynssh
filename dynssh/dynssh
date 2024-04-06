@@ -169,7 +169,6 @@ _dynssh() {
   ssh \
     -F "${_sshcfg}" \
     -o StrictHostKeyChecking=no \
-    "${_host}" \
     "${_args[@]}"
 }
 
@@ -424,6 +423,7 @@ usage:
     <host>
     [ssh options]
   options:
+     -t <target_host>     Specify target host
      -d <device>          Specify network device
                           Default: '$(_get "target" "device")'
      -u <user>            user to connect to.
@@ -433,9 +433,6 @@ usage:
      -h                   This message.
      -c                   Enable color output
      -v                   Enable verbose output
-
-  host:
-    Host to connect to.
 ENDUSAGETEXT
   _printf \
     '%s\n' \
