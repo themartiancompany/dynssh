@@ -523,8 +523,9 @@ _set_overrides
 [[ "$(_get \
         "target" \
         "host")" == "" ]] && \
-  _msg_err \
-   "-t option is required" && \
+  _msg_error \
+   "-t option is required" \
+   0 && \
   _usage \
    1
 _show_config
