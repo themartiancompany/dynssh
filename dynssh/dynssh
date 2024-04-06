@@ -18,6 +18,7 @@ _global_variables() {
   target_device=""
   target_user=""
   target_port=""
+  ssh_options=()
   color=""
   quiet=""
 }
@@ -384,6 +385,10 @@ _read_conf() {
 _set_overrides() {
   _set_override \
     "target" \
+    "host" \
+    ""
+  _set_override \
+    "target" \
     "device" \
     "wlan0"
   _set_override \
@@ -450,7 +455,7 @@ _display_flags() {
   for _flag \
     in "${_flags[@]}"; do
   _msg_info \
-    "                              ${_flag}"
+    "                             ${_flag}"
   done
 }
 
@@ -471,9 +476,9 @@ _show_config() {
   _msg_info "                     Port:   $(_get "target" "port")"
   if [[ "$(_get \
           "ssh" \
-          "options")" != "" ]] && \
+          "options")" != "" ]]; then
     _msg_info \
-             "             SSH options:"]]; then
+             "             SSH options:"
     _display_flags                        "${ssh_options[@]}"
   fi
 }
@@ -510,12 +515,6 @@ shift \
   $(( \
     OPTIND - 1 \
   ))
-if (( $# < 1 )); then
-  _msg_error \
-    "No host specified." \
-    0
-  _usage 0
-fi
 ssh_options=(
   "$@"
 )
