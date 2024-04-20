@@ -18,6 +18,7 @@ _global_variables() {
   target_device=""
   target_user=""
   target_port=""
+  ssh_command=""
   ssh_options=()
   color=""
   quiet=""
@@ -70,6 +71,7 @@ _dynssh() {
     _device="${2}" \
     _user="${3}" \
     _port="${4}" \
+    _ssh_command="${5}" \
     _args=() \
     _msg=() \
     _sshcfg \
@@ -78,7 +80,7 @@ _dynssh() {
     _address="" \
     _ns
   shift \
-    4
+    5
   _args=(
     "${@}"
   )
@@ -167,14 +169,14 @@ _dynssh() {
     "${_user}" \
     "${_port}"
   # _connection_test
-  ssh \
+  "${_ssh_command}" \
     -F "${_sshcfg}" \
     -o StrictHostKeyChecking=no \
     "${_args[@]}"
 }
 
 _connection_test() {
-  if ssh \
+  if "${_ssh_command}" \
        -q \
        -F "${_sshcfg}" \
        -o StrictHostKeyChecking=no \
@@ -384,6 +386,13 @@ _read_conf() {
 
 _set_overrides() {
   _set_override \
+    "ssh" \
+    "command" \
+    "$( \
+      command \
+        -v \
+        "ssh")"
+  _set_override \
     "target" \
     "host" \
     ""
@@ -435,6 +444,9 @@ usage:
                           Default: '$(_get "target" "user")'
      -p <port>            Connect through a specific port.
                           Default: '$(_get "target" "port")'
+     -C <ssh_path>        Connect using a specific ssh command.
+                          Default: '$(_get "ssh" "command")'
+
      -h                   This message.
      -c                   Enable color output
      -v                   Enable verbose output
@@ -470,6 +482,7 @@ _show_config() {
       "${SOURCE_DATE_EPOCH}"
   _msg_info "${app_name} configuration"
   _msg_info "          Connection date:   $(_get "_build" "date")"
+  _msg_info "              SSH command:   $(_get "ssh" "command")"
   _msg_info "                     Host:   $(_get "target" "host")"
   _msg_info "                   Device:   $(_get "target" "device")"
   _msg_info "                     User:   $(_get "target" "user")"
@@ -489,7 +502,7 @@ _requirements
 # shellcheck disable=SC2034
 while \
   getopts \
-    't:d:u:p:cvh?' \
+    't:d:u:p:C:cvh?' \
     arg; do
   case \
     "${arg}" in
@@ -497,6 +510,7 @@ while \
     d) override_target_device="${OPTARG}" ;;
     u) override_target_user="${OPTARG}" ;;
     p) override_target_port="${OPTARG}" ;;
+    C) override_ssh_command="${OPTARG}" ;;
     c) override_color="y" ;;
     v) override_quiet="n" ;;
     h|?) _set_overrides && \
@@ -545,6 +559,10 @@ _dynssh \
     _get \
       "target" \
       "port")" \
+   "$( \
+    _get \
+      "ssh" \
+      "command")" \
   "${ssh_options[@]}"
 
 # vim:set sw=2 sts=-1 et:
