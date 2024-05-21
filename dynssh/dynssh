@@ -73,7 +73,7 @@ _dynssh() {
   shift \
     5
   _args=(
-    "$@"
+    "${@}"
   )
   _conf="$( \
     _get_conf_path \
@@ -146,31 +146,40 @@ _make_conf() {
     _host="${1}" \
     _conf="${2}" \
     _port="${3}"
-  _conf="$(_get_conf_path \
-             "${_host}")"
+  if [[ "${_conf}" == "" ]]; then
+    _conf="$( \
+      _get_conf_path \
+        "${_host}")"
+  fi
   mkdir \
     -p \
-    "$(dirname \
-      "${_conf}")"
+    "$( \
+      dirname \
+        "${_conf}")"
   _write_setting \
+    "${_conf}" \
     "port" \
     "${_port}"
-  _write_setting \
-    "method" \
-    "hotspot-resolver"
+  # _write_setting \
+  #   "${_conf}" \
+  #   "method" \
+  #   "hotspot-resolver"
 }
 
 _check_conf() {
   local \
     _conf="${1}" \
+    _host="${2}" \
     _address \
     _dir \
-    _host \
     _port \
     _msg=() \
     _perm
-  _dir="${HOME}/.config"
-  _conf="${_dir}/${app_name}/localhosts.cfg"
+  if [[ "${_conf}" == "" ]]; then
+    _conf="$( \
+      _get_conf_path \
+        "${_host}")"
+  fi
   _msg=(
     "Configuration file:"
     "${_conf}"
@@ -193,6 +202,14 @@ _check_conf() {
 
 _input_credentials() {
   if [[ "${_host}" == "" ]]; then
+    _host="$( \
+      hostnamectl \
+        hostname)"
+  fi
+  if [[ "${_host}" == "" ]]; then
+    # _input \
+    #   "_host" \
+    #   "enter name for this host"
     printf \
       "  %s\n" \
       "enter name for this host:" && \
@@ -334,6 +351,7 @@ _show_config() {
   _msg_info "                   Device:   $(_get "target" "device")"
   _msg_info "                     User:   $(_get "target" "user")"
   _msg_info "                     Port:   $(_get "target" "port")"
+  _msg_info "       Configuration file:   $(_get_conf_path "$(_get "target" "host")")"
   if [[ "$(_get \
           "ssh" \
           "options")" != "" ]]; then
