@@ -65,12 +65,11 @@ _dynssh() {
     _ssh_command="${5}" \
     _args=() \
     _msg=() \
+    _cache \
     _sshcfg \
     _conf \
     _cfg \
-    _hostname \
-    _address="" \
-    _ns
+    _address
   shift \
     5
   _args=(
@@ -79,12 +78,17 @@ _dynssh() {
   _conf="$( \
     _get_conf_path \
       "${_host}")"
-  _sshcfg="${HOME}/.cache/dynssh/ssh.config"
+  _cache="$( \
+    _get_cache \
+      "$( \
+        _get \
+          "app" \
+          "name")" \
+      "${_host}")"
+  _sshcfg="${_cache}/ssh.config"
   mkdir \
     -p \
-    "$(dirname \
-         "${_sshcfg}")"
-  _read_conf
+    "${_cache}"
   if [[ "${_port}" == "" ]]; then
     _port="$( \
         _read_settings \
@@ -95,12 +99,12 @@ _dynssh() {
   _hotspot_resolver_opts=(
     -d 
       "${_device}"
-
   )
   _address="$( \
     hotspot-resolver \
       get \
-        "${_host}" "${_hotspot_resolver_opts[@]}")"
+        "${_host}" \
+        "${_hotspot_resolver_opts[@]}")"
   _msg=(
     "connecting to ${_user}@${_address}:${_port}"
     )
