@@ -33,33 +33,24 @@ _requirements() {
   _check_cmd \
     "mk${_pkg}config" \
     "${_pkg}-utils"
+  _check_cmd \
+    "hotspot-resolver"
 }
 
-_ifconfig() {
+_get_conf_path() {
   local \
-    _out="" \
-    _nonetdev=() \
-    _msg=()
-  _nonetdev=(
-    "Warning: cannot open /proc/net/dev"
-    "(Permission denied). Limited output."
-  )
-  _stderr="$( \
-    ifconfig \
-      -a 2>&1)"
-  _out="$( \
-    ifconfig \
-      -a 2>&1)"
-  if [[ "${_stderr}" == *"${_nonetdev[*]}"* ]]; then
-    _out="$( \
-      echo \
-        "${_out}" | \
-        tail \
-          -n \
-            +2)"
-  fi
+    _dir \
+    _conf
+  _dir="${HOME}/.config/$( \
+    _get \
+      "app" \
+      "name")"
+  _conf="${_dir}/$( \
+    _get \
+      "target" \
+      "host").cfg"
   echo \
-    "${_out}"
+    "${_conf}"
 }
 
 # Local ssh resolver
@@ -89,73 +80,20 @@ _dynssh() {
     -p \
     "$(dirname \
          "${_sshcfg}")"
-  [[ "$( \
-       _ifconfig | \
-          grep \
-            "${_device}")" != "" ]] && \
-    _address="$( \
-      _get_address \
-        "${_device}")"
-  [[ "${_address}" == "" ]] && \
-      _msg=(
-	"${_device} is not connected"
-        "to a network.") && \
-      _msg_error \
-        "${_msg[*]}" \
-        1
-  _msg=(
-    "device ${_device}"
-    "has address ${_address}"
-  )
-  _msg_info \
-    "${_msg[*]}"
-  _ns="$( \
-    _get_subnet \
-      "${_address}")"
-  [[ "$(_confirm_subnet \
-          "${_device}" \
-          "${_ns}")" != "" ]] && \
-    _msg_error \
-      "anomalous behaviour" \
-      1
-  [[ "${_ns}" == "" ]] && \
-    _msg=(
-      "${_device} is not connected"
-      "to a network.") && \
-    _msg_error \
-      "${_msg[*]}" \
-      1
-  _msg=(
-    "${_device} is on subnet"
-    "${_ns}.0")
-  _msg_info \
-    "${_msg[*]}"
   _read_conf
-  _hostname="$( \
-    echo \
-      "${_cfg}" | \
-      grep "${_host}=" | \
-        awk \
-	  -F "=" \
-	  '{print $2}')"
-  [[ "${_hostname}" == "" ]] && \
-    _msg_error \
-      "No address configured for ${_host}" \
-      1
-  _port="$( \
-    echo \
-      "${_hostname}" | \
-      awk \
-        -F ":" \
-	'{print $2}')"
-  _hostname="$( \
-    echo \
-      "${_hostname}" | \
-      awk \
-        -F ":" \
-	'{print $1}')"
+  if [[ "${_port}" == "" ]]; then
+    _port="$( \
+      _read_settings \
+        "$( \
+          _get_conf_path \
+            "${_host}" \
+            "port")"
+  fi
+  _address="$( \
+    hotspot-resolver \
+      "${_hotspot_resolver_opts[@]}")"
   _msg=(
-    "connecting to ${_user}@${_host}:${_port}"
+    "connecting to ${_user}@${_address}:${_port}"
     )
   _msg_info \
     "${_msg[*]}"
@@ -165,7 +103,7 @@ _dynssh() {
   mksshconfig \
     "${_sshcfg}" \
     "${_host}" \
-    "${_ns}.${_hostname}" \
+    "${_address}" \
     "${_user}" \
     "${_port}"
   # _connection_test
@@ -190,80 +128,12 @@ _connection_test() {
     1
 }
 
-# Get subnet from IPv4 address
-# $1: address
-_get_subnet() {
-  local \
-    _address="${1}"
-  echo \
-    "${_address%.*}"
-}
-
-_route() {
-  route \
-    2>&1
-}
-
-_confirm_subnet() {
-  local \
-    _device="${1}" \
-    _ns="${2}" \
-    _confirm \
-    _no_route=()
-  _no_route=(
-    "INET (IPv4) not configured"
-    "in this system.")
-  _confirm="$( \
-    _get_subnet \
-      "$(_route | \
-           grep \
-	     "${_device}" | 
-           grep  \
-             "${_ns}" | \
-	     awk \
-	       '{print $1}')")"
-  [[  "$(_route)" == \
-      "${_no_route[*]}" ]] && \
-    return
-  if [[ "${_ns}" != \
-     "${_confirm}" ]]; then
-    _msg=(
-      "Mismatch between 'ifconfig' (${_ns})"
-      "and 'route' (${_confirm:-None}) outputs."
-      "Cannot confirm subnet."
-    )
-    _msg_warning \
-      "${_msg[*]}"
-  fi
-}
-
-_get_address() {
-  local \
-    _device="${1}" \
-    _line
-  _line="$( \
-    _ifconfig | \
-      grep \
-        -Pn \
-        "${_device}" | \
-        cut \
-          -d":" \
-          -f 1)"
-  _line=$(( \
-    _line + 1 ))
-  _ifconfig | \
-    sed \
-      -n \
-        "${_line}p;" | \
-      awk \
-        '{print $2}'
-}
-
 _make_conf() {
   mkdir \
     -p \
     "$(dirname \
-         "${_conf}")"
+         "$(_get_conf_path \
+             "")")"
   echo \
     "# values go from 2 to 254" >> \
     "${_conf}"
