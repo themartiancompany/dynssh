@@ -129,11 +129,18 @@ _connection_test() {
 }
 
 _make_conf() {
+  local \
+    _host="${1}" \
+    _conf="${2}"
+  _conf="(_get_conf_path \
+             "${_host}")")
   mkdir \
     -p \
     "$(dirname \
-         "$(_get_conf_path \
-             "")")"
+         "${_conf}+(_get_conf_path \
+             "${_host}")")"
+  _write_setting \
+    "${}"
   echo \
     "# values go from 2 to 254" >> \
     "${_conf}"
