@@ -147,7 +147,7 @@ _make_conf() {
     _conf="${2}" \
     _port="${3}"
   _conf="$(_get_conf_path \
-             "${_host}")")
+             "${_host}")"
   mkdir \
     -p \
     "$(dirname \
@@ -229,32 +229,6 @@ _input_credentials() {
   fi
   _msg_info \
     "Set port ${_port}"
-}
-
-_read_conf() {
-  local \
-    _conf \
-    _dir \
-    _hostname=""
-  _dir="${HOME}/.config"
-  _conf="${_dir}/${app_name}/localhosts.cfg"
-  _check_conf \
-    "${_conf}"
-  _cfg="$( \
-    cat \
-      "${_conf}")"
-  _cfg="$(\
-    echo \
-      "${_cfg}" | \
-      sed \
-        -e "/# */d" | \
-	grep \
-          "=" )"
-  if [[ "${_cfg}" == '' ]]; then
-    _msg_error \
-      "empty configuration file!" \
-      1
-  fi
 }
 
 _set_overrides() {
