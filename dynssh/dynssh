@@ -73,7 +73,7 @@ _dynssh() {
   shift \
     5
   _args=(
-    "${@}"
+    "$@"
   )
   _sshcfg="${HOME}/.cache/dynssh/ssh.config"
   mkdir \
@@ -131,37 +131,20 @@ _connection_test() {
 _make_conf() {
   local \
     _host="${1}" \
-    _conf="${2}"
-  _conf="(_get_conf_path \
+    _conf="${2}" \
+    _port="${3}"
+  _conf="$(_get_conf_path \
              "${_host}")")
   mkdir \
     -p \
     "$(dirname \
-         "${_conf}+(_get_conf_path \
-             "${_host}")")"
+      "${_conf}")"
   _write_setting \
-    "${}"
-  echo \
-    "# values go from 2 to 254" >> \
-    "${_conf}"
-  echo \
-    "# device=111" >> \
-    "${_conf}"
-  [[ \
-    "$( \
-      command \
-        -v \
-        "hostnamectl")" != "" ]] && \
-    _host="$( \
-      hostnamectl \
-        hostname)"
-  _input_credentials
-  _address="$( \
-    _get_address \
-      "${_device}")"
-  echo \
-    "${_host}=${_address##*.}:${_port}" >> \
-    "${_conf}"
+    "port" \
+    "${_port}"
+  _write_setting \
+    "method" \
+    "hotspot-resolver"
 }
 
 _check_conf() {
