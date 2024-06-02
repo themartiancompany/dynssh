@@ -355,9 +355,7 @@ _show_config() {
   if [[ "$(_get \
           "ssh" \
           "options")" != "" ]]; then
-    _msg_info \
-             "             SSH options:"
-    _display_flags                        "${ssh_options[@]}"
+    _msg_info "                 SSH options:   ${ssh_options[*]}"
   fi
 }
 
@@ -397,6 +395,8 @@ shift \
 ssh_options=(
   "$@"
 )
+echo \
+  "${ssh_options[*]}"
 _set_overrides
 _config_user_init \
   "$(_get \
