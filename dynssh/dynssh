@@ -338,14 +338,14 @@ _display_flags() {
 # Shows configuration options.
 _show_config() {
   local \
-    _build_date
+    _connect_date
   TZ=UTC \
     printf \
-      -v _build_date \
+      -v _connect_date \
       '%(%FT%R%z)T' \
       "${SOURCE_DATE_EPOCH}"
   _msg_info "${app_name} configuration"
-  _msg_info "          Connection date:   $(_get "_build" "date")"
+  _msg_info "          Connection date:   $(_get "_connect" "date")"
   _msg_info "              SSH command:   $(_get "ssh" "command")"
   _msg_info "                     Host:   $(_get "target" "host")"
   _msg_info "                   Device:   $(_get "target" "device")"
