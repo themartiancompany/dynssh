@@ -121,8 +121,10 @@ _dynssh() {
     "${_port}"
   # _connection_test
   "${_ssh_command}" \
+    -t \
     -F "${_sshcfg}" \
-    -o StrictHostKeyChecking=no \
+    -o \
+      StrictHostKeyChecking=no \
     "${_args[@]}"
 }
 
