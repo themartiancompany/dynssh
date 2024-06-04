@@ -20,6 +20,8 @@ _global_variables() {
   target_port=""
   ssh_command=""
   ssh_options=()
+  proxy_address=""
+  proxy_port=""
   color=""
   quiet=""
 }
@@ -102,9 +104,9 @@ _dynssh() {
   )
   _address="$( \
     hotspot-resolver \
+      "${_hotspot_resolver_opts[@]}" \
       get \
-        "${_host}" \
-        "${_hotspot_resolver_opts[@]}")"
+        "${_host}")"
   _msg=(
     "connecting to ${_user}@${_address}:${_port}"
     )
