@@ -132,6 +132,8 @@ _dynssh() {
     )
   _msg_info \
     "${_msg[*]}"
+  _msg_info \
+    "mksshconfig opts: ${_mksshconfig_opts[@]}"
   rm \
     -f \
     "${_sshcfg}"
@@ -143,6 +145,10 @@ _dynssh() {
     "${_user}" \
     "${_port}"
   # _connection_test
+  _msg_info \
+    "ssh config: $( \
+      cat \
+        "${_sshcfg}")"
   "${_ssh_command}" \
     -t \
     -F "${_sshcfg}" \
@@ -464,6 +470,14 @@ _dynssh \
   "$( \
     _get \
       "target" \
+      "port")" \
+  "$( \
+    _get \
+      "proxy" \
+      "address")" \
+  "$( \
+    _get \
+      "proxy" \
       "port")" \
    "$( \
     _get \
