@@ -312,6 +312,8 @@ usage:
                           Default: '$(_get "target" "user")'
      -p <port>            Connect through a specific port.
                           Default: '$(_get "target" "port")'
+     -T <proxy_address>   Specify a proxy address
+     -P <proxy_port>      Specify a proxy port
      -C <ssh_path>        Connect using a specific ssh command.
                           Default: '$(_get "ssh" "command")'
 
@@ -355,6 +357,8 @@ _show_config() {
   _msg_info "                   Device:   $(_get "target" "device")"
   _msg_info "                     User:   $(_get "target" "user")"
   _msg_info "                     Port:   $(_get "target" "port")"
+  _msg_info "            Proxy address:   $(_get "proxy" "address")"
+  _msg_info "               Proxy port:   $(_get "proxy" "port")"
   _msg_info "       Configuration file:   $(_get_conf_path "$(_get "target" "host")")"
   if [[ "$(_get \
           "ssh" \
@@ -369,7 +373,7 @@ _requirements
 # shellcheck disable=SC2034
 while \
   getopts \
-    't:d:u:p:C:cvh?' \
+    't:d:u:p:T:P:C:cvh?' \
     arg; do
   case \
     "${arg}" in
@@ -377,6 +381,8 @@ while \
     d) override_target_device="${OPTARG}" ;;
     u) override_target_user="${OPTARG}" ;;
     p) override_target_port="${OPTARG}" ;;
+    T) override_proxy_address="${OPTARG}" ;;
+    P) override_proxy_port="${OPTARG}" ;;
     C) override_ssh_command="${OPTARG}" ;;
     c) override_color="y" ;;
     v) override_quiet="n" ;;
