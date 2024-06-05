@@ -64,7 +64,9 @@ _dynssh() {
     _device="${2}" \
     _user="${3}" \
     _port="${4}" \
-    _ssh_command="${5}" \
+    _proxy_address="${5}" \
+    _proxy_port="${6}" \
+    _ssh_command="${7}" \
     _args=() \
     _msg=() \
     _cache \
@@ -98,6 +100,7 @@ _dynssh() {
           "${_host}" \
           "port")"
   fi
+  
   _hotspot_resolver_opts=(
     -d 
       "${_device}"
