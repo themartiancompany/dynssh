@@ -17,6 +17,7 @@ _global_variables() {
   target_host=""
   target_device=""
   target_user=""
+  target_address=""
   target_port=""
   ssh_command=""
   ssh_options=()
@@ -61,12 +62,13 @@ _get_conf_path() {
 _dynssh() {
   local \
     _host="${1}" \
-    _device="${2}" \
-    _user="${3}" \
-    _port="${4}" \
-    _proxy_address="${5}" \
-    _proxy_port="${6}" \
-    _ssh_command="${7}" \
+    _address="${2}" \
+    _device="${3}" \
+    _user="${4}" \
+    _port="${5}" \
+    _proxy_address="${6}" \
+    _proxy_port="${7}" \
+    _ssh_command="$8}" \
     _args=() \
     _msg=() \
     _cache \
@@ -100,16 +102,17 @@ _dynssh() {
           "${_host}" \
           "port")"
   fi
-  
-  _hotspot_resolver_opts=(
-    -d 
-      "${_device}"
-  )
-  _address="$( \
-    hotspot-resolver \
-      "${_hotspot_resolver_opts[@]}" \
-      get \
-        "${_host}")"
+  if [[ "${_address}" == "" ]]; then 
+    _hotspot_resolver_opts=(
+      -d 
+        "${_device}"
+    )
+    _address="$( \
+      hotspot-resolver \
+        "${_hotspot_resolver_opts[@]}" \
+        get \
+          "${_host}")"
+  fi
   _msg=(
     "connecting to ${_user}@${_address}:${_port}"
     )
@@ -359,6 +362,7 @@ _show_config() {
   _msg_info "                     Host:   $(_get "target" "host")"
   _msg_info "                   Device:   $(_get "target" "device")"
   _msg_info "                     User:   $(_get "target" "user")"
+  _msg_info "                  Address:   $(_get "target" "address")"
   _msg_info "                     Port:   $(_get "target" "port")"
   _msg_info "            Proxy address:   $(_get "proxy" "address")"
   _msg_info "               Proxy port:   $(_get "proxy" "port")"
@@ -376,11 +380,12 @@ _requirements
 # shellcheck disable=SC2034
 while \
   getopts \
-    't:d:u:p:T:P:C:cvh?' \
+    't:a:d:u:p:T:P:C:cvh?' \
     arg; do
   case \
     "${arg}" in
     t) override_target_host="${OPTARG}" ;;
+    a) override_target_address="${OPTARG}" ;;
     d) override_target_device="${OPTARG}" ;;
     u) override_target_user="${OPTARG}" ;;
     p) override_target_port="${OPTARG}" ;;
@@ -429,6 +434,10 @@ _dynssh \
     _get \
       "target" \
       "host")" \
+  "$( \
+    _get \
+      "target" \
+      "address")" \
   "$( \
     _get \
       "target" \
