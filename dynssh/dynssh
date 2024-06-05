@@ -68,11 +68,13 @@ _dynssh() {
     _port="${5}" \
     _proxy_address="${6}" \
     _proxy_port="${7}" \
-    _ssh_command="$8}" \
+    _ssh_command="${8}" \
     _args=() \
     _msg=() \
     _cache \
     _sshcfg \
+    _mksshconfig_opts=() \
+    _hotspot_resolver_opts=() \
     _conf \
     _cfg \
     _address
@@ -102,6 +104,18 @@ _dynssh() {
           "${_host}" \
           "port")"
   fi
+  if [[ "${_proxy_address}" != "" ]]; then
+    _mksshconfig_opts+=(
+      -p
+        "${_proxy_address}"
+    )
+  fi
+  if [[ "${_proxy_port}" != "" ]]; then
+    _mksshconfig_opts+=(
+      -P
+        "${_proxy_port}"
+    )
+  fi
   if [[ "${_address}" == "" ]]; then 
     _hotspot_resolver_opts=(
       -d 
@@ -122,6 +136,7 @@ _dynssh() {
     -f \
     "${_sshcfg}"
   mksshconfig \
+    "${_mksshconfig_opts[@]}" \
     "${_sshcfg}" \
     "${_host}" \
     "${_address}" \
