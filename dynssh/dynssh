@@ -330,6 +330,10 @@ _get_ssh() {
 
 _set_overrides() {
   _set_override \
+    "connect" \
+    "date" \
+    "$(_get_date_human)"
+  _set_override \
     "ssh" \
     "command" \
     "$(_get_ssh)"
@@ -392,6 +396,8 @@ usage:
                           Default: '$(_get "target" "user")'
      -p <port>            Connect through a specific port.
                           Default: '$(_get "target" "port")'
+     -l <local_port>      Tunnel on given local port
+     -r <remote_port>     Tunnel on given remote port
      -T <proxy_address>   Specify a proxy address
      -P <proxy_port>      Specify a proxy port
      -C <ssh_path>        Connect using a specific ssh command.
@@ -431,6 +437,8 @@ _show_config() {
   _msg_info "                     User:   $(_get "target" "user")"
   _msg_info "                  Address:   $(_get "target" "address")"
   _msg_info "                     Port:   $(_get "target" "port")"
+  _msg_info "        Tunnel local port:   $(_get "tunnel" "local")"
+  _msg_info "       Tunnel remote port:   $(_get "tunnel" "remote")"
   _msg_info "            Proxy address:   $(_get "proxy" "address")"
   _msg_info "               Proxy port:   $(_get "proxy" "port")"
   _msg_info "            Proxy address:   $(_get "proxy" "address")"
