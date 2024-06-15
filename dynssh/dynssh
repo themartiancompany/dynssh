@@ -27,6 +27,7 @@ _global_variables() {
   proxy_port=""
   ssh_command=""
   ssh_options=()
+  connect_date=""
   color=""
   quiet=""
 }
@@ -304,7 +305,34 @@ _input_credentials() {
     "Set port ${_port}"
 }
 
+_get_ssh() {
+  local \
+    _sshs=() \
+    _cmd \
+    _ssh
+  _sshs=(
+    'autossh'
+    'ssh'
+  )
+  for _ssh \
+    in "${_sshs[@]}"; do
+    _cmd="$( \
+      command \
+        -v \
+        "${_ssh}")"
+    if [[ "${_cmd}" != "" ]]; then
+      echo \
+        "${_cmd}"
+      break
+    fi
+  done
+}
+
 _set_overrides() {
+  _set_override \
+    "ssh" \
+    "command" \
+    "$(_get_ssh)"
   _set_override \
     "ssh" \
     "command" \
@@ -395,21 +423,16 @@ _display_flags() {
 
 # Shows configuration options.
 _show_config() {
-  local \
-    _connect_date
-  TZ=UTC \
-    printf \
-      -v _connect_date \
-      '%(%FT%R%z)T' \
-      "${SOURCE_DATE_EPOCH}"
   _msg_info "${app_name} configuration"
-  _msg_info "          Connection date:   $(_get "_connect" "date")"
+  _msg_info "          Connection date:   $(_get "connect" "date")"
   _msg_info "              SSH command:   $(_get "ssh" "command")"
   _msg_info "                     Host:   $(_get "target" "host")"
   _msg_info "                   Device:   $(_get "target" "device")"
   _msg_info "                     User:   $(_get "target" "user")"
   _msg_info "                  Address:   $(_get "target" "address")"
   _msg_info "                     Port:   $(_get "target" "port")"
+  _msg_info "            Proxy address:   $(_get "proxy" "address")"
+  _msg_info "               Proxy port:   $(_get "proxy" "port")"
   _msg_info "            Proxy address:   $(_get "proxy" "address")"
   _msg_info "               Proxy port:   $(_get "proxy" "port")"
   _msg_info "       Configuration file:   $(_get_conf_path "$(_get "target" "host")")"
