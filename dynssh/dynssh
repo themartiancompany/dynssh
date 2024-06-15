@@ -25,6 +25,7 @@ _global_variables() {
   tunnel_remote=""
   proxy_address=""
   proxy_port=""
+  ssh_command=""
   ssh_options=()
   color=""
   quiet=""
