@@ -19,8 +19,6 @@ _global_variables() {
   target_user=""
   target_address=""
   target_port=""
-  target_port=""
-  target_port=""
   tunnel_local=""
   tunnel_remote=""
   proxy_address=""
@@ -123,14 +121,14 @@ _dynssh() {
     [[ "${_tunnel_remote}" != "" ]]; then
     if \
       [[ "${_tunnel_remote}" == "" ]]; then
-      tunnel_remote="${_tunnel_local}"
+      _tunnel_remote="${_tunnel_local}"
     fi
     if [[ "${_tunnel_local}" == "" ]]; then
-      tunnel_local="${_tunnel_remote}"
+      _tunnel_local="${_tunnel_remote}"
     fi
     ssh_opts+=(
       -L
-        "${_tunnel_local}:localhost:${_remote_port}"
+        "${_tunnel_local}:localhost:${_tunnel_remote}"
     )
   fi
   if [[ "${_proxy_address}" != "" ]]; then
@@ -338,13 +336,6 @@ _set_overrides() {
     "command" \
     "$(_get_ssh)"
   _set_override \
-    "ssh" \
-    "command" \
-    "$( \
-      command \
-        -v \
-        "ssh")"
-  _set_override \
     "target" \
     "host" \
     ""
@@ -360,6 +351,14 @@ _set_overrides() {
     "target" \
     "port" \
     "2222"
+  _set_override \
+    "tunnel" \
+    "local" \
+    ""
+  _set_override \
+    "tunnel" \
+    "remote" \
+    ""
   if [[ -v override_quiet ]]; then
     quiet="${override_quiet}"
   elif [[ -z "${quiet}" ]]; then
@@ -397,7 +396,9 @@ usage:
      -p <port>            Connect through a specific port.
                           Default: '$(_get "target" "port")'
      -l <local_port>      Tunnel on given local port
+                          Default: '$(_get "tunnel" "local")'
      -r <remote_port>     Tunnel on given remote port
+                          Default: '$(_get "tunnel" "remote")'
      -T <proxy_address>   Specify a proxy address
      -P <proxy_port>      Specify a proxy port
      -C <ssh_path>        Connect using a specific ssh command.
@@ -439,8 +440,6 @@ _show_config() {
   _msg_info "                     Port:   $(_get "target" "port")"
   _msg_info "        Tunnel local port:   $(_get "tunnel" "local")"
   _msg_info "       Tunnel remote port:   $(_get "tunnel" "remote")"
-  _msg_info "            Proxy address:   $(_get "proxy" "address")"
-  _msg_info "               Proxy port:   $(_get "proxy" "port")"
   _msg_info "            Proxy address:   $(_get "proxy" "address")"
   _msg_info "               Proxy port:   $(_get "proxy" "port")"
   _msg_info "       Configuration file:   $(_get_conf_path "$(_get "target" "host")")"
@@ -492,9 +491,9 @@ shift \
 ssh_options=(
   "$@"
 )
-echo \
-  "${ssh_options[*]}"
 _set_overrides
+echo \
+  "loc ${tunnel_local}"
 _config_user_init \
   "$(_get \
        "app" \
