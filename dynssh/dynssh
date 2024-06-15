@@ -19,10 +19,13 @@ _global_variables() {
   target_user=""
   target_address=""
   target_port=""
-  ssh_command=""
-  ssh_options=()
+  target_port=""
+  target_port=""
+  tunnel_local=""
+  tunnel_remote=""
   proxy_address=""
   proxy_port=""
+  ssh_options=()
   color=""
   quiet=""
 }
@@ -66,9 +69,12 @@ _dynssh() {
     _device="${3}" \
     _user="${4}" \
     _port="${5}" \
-    _proxy_address="${6}" \
-    _proxy_port="${7}" \
-    _ssh_command="${8}" \
+    _tunnel_local="${6}" \
+    _tunnel_remote="${7}" \
+    _proxy_address="${8}" \
+    _proxy_port="${9}" \
+    _ssh_command="${10}" \
+    _ssh_opts=() \
     _args=() \
     _msg=() \
     _cache \
@@ -79,9 +85,9 @@ _dynssh() {
     _cfg \
     _address
   shift \
-    5
+    10
   _args=(
-    "${@}"
+    "$@"
   )
   _conf="$( \
     _get_conf_path \
@@ -94,15 +100,36 @@ _dynssh() {
           "name")" \
       "${_host}")"
   _sshcfg="${_cache}/ssh.config"
+  _ssh_opts=(
+    -t
+    -F "${_sshcfg}"
+    -o
+      StrictHostKeyChecking=no
+  )
   mkdir \
     -p \
     "${_cache}"
   if [[ "${_port}" == "" ]]; then
     _port="$( \
-        _read_settings \
-          "${_conf}" \
-          "${_host}" \
-          "port")"
+      _read_settings \
+        "${_conf}" \
+        "${_host}" \
+        "port")"
+  fi
+  if \
+    [[ "${_tunnel_local}" != "" ]] || \
+    [[ "${_tunnel_remote}" != "" ]]; then
+    if \
+      [[ "${_tunnel_remote}" == "" ]]; then
+      tunnel_remote="${_tunnel_local}"
+    fi
+    if [[ "${_tunnel_local}" == "" ]]; then
+      tunnel_local="${_tunnel_remote}"
+    fi
+    ssh_opts+=(
+      -L
+        "${_tunnel_local}:localhost:${_remote_port}"
+    )
   fi
   if [[ "${_proxy_address}" != "" ]]; then
     _mksshconfig_opts+=(
@@ -129,7 +156,7 @@ _dynssh() {
   fi
   _msg=(
     "connecting to ${_user}@${_address}:${_port}"
-    )
+  )
   _msg_info \
     "${_msg[*]}"
   _msg_info \
@@ -150,10 +177,7 @@ _dynssh() {
       cat \
         "${_sshcfg}")"
   "${_ssh_command}" \
-    -t \
-    -F "${_sshcfg}" \
-    -o \
-      StrictHostKeyChecking=no \
+    "${_ssh_opts[@]}" \
     "${_args[@]}"
 }
 
@@ -401,7 +425,7 @@ _requirements
 # shellcheck disable=SC2034
 while \
   getopts \
-    't:a:d:u:p:T:P:C:cvh?' \
+    't:a:d:u:p:l:r:T:P:C:cvh?' \
     arg; do
   case \
     "${arg}" in
@@ -410,6 +434,8 @@ while \
     d) override_target_device="${OPTARG}" ;;
     u) override_target_user="${OPTARG}" ;;
     p) override_target_port="${OPTARG}" ;;
+    l) override_tunnel_local="${OPTARG}" ;;
+    r) override_tunnel_remote="${OPTARG}" ;;
     T) override_proxy_address="${OPTARG}" ;;
     P) override_proxy_port="${OPTARG}" ;;
     C) override_ssh_command="${OPTARG}" ;;
@@ -471,6 +497,14 @@ _dynssh \
     _get \
       "target" \
       "port")" \
+  "$( \
+    _get \
+      "tunnel" \
+      "local")" \
+  "$( \
+    _get \
+      "tunnel" \
+      "remote")" \
   "$( \
     _get \
       "proxy" \
