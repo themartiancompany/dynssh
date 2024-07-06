@@ -24,6 +24,7 @@ _global_variables() {
   proxy_address=""
   proxy_port=""
   ssh_command=""
+  monitor_port=""
   ssh_options=()
   connect_date=""
   color=""
@@ -59,6 +60,51 @@ _get_conf_path() {
     "${_conf}"
 }
 
+_autossh_opts() {
+  local \
+    _ssh_opts=()
+  _ssh_opts=(
+    "$@"
+  )
+  _opts=(
+    -M "${_monitor_port}"
+    "${_ssh_opts[@]}"
+  )
+}
+
+_rsync_opts() {
+  local \
+    _ssh_opts=()
+  _ssh_opts=(
+    "$@"
+  )
+  _opts=(
+    -vvv
+    -e 
+      "ssh ${_ssh_opts[*]}"
+    -az
+  )
+}
+
+_command_opts() {
+  local \
+    _command="${1}" \
+    _ssh_opts=() \
+    _command_name
+  shift \
+    1
+  _ssh_opts=(
+    "$@"
+  )
+  _command_name="$( \
+    basename \
+      "${_command}")"
+  if [[ "${_command_name}" != "ssh" ]]; then
+    "_${_command_name}_opts" \
+        "${_ssh_opts[@]}"
+  fi
+}
+
 # Local ssh resolver
 # $1: hostname of the device to connect
 # $2: network device name
@@ -73,7 +119,9 @@ _dynssh() {
     _tunnel_remote="${7}" \
     _proxy_address="${8}" \
     _proxy_port="${9}" \
-    _ssh_command="${10}" \
+    _command="${10}" \
+    _monitor_port="${11}" \
+    _opts=() \
     _ssh_opts=() \
     _args=() \
     _msg=() \
@@ -126,9 +174,11 @@ _dynssh() {
     if [[ "${_tunnel_local}" == "" ]]; then
       _tunnel_local="${_tunnel_remote}"
     fi
-    ssh_opts+=(
-      -L
-        "${_tunnel_local}:localhost:${_tunnel_remote}"
+    _mksshconfig_opts+=(
+      -l
+        "${_tunnel_local}"
+      -r
+        "${_tunnel_remote}"
     )
   fi
   if [[ "${_proxy_address}" != "" ]]; then
@@ -176,13 +226,17 @@ _dynssh() {
     "ssh config: $( \
       cat \
         "${_sshcfg}")"
-  "${_ssh_command}" \
-    "${_ssh_opts[@]}" \
+  _command_opts \
+      "${_command}" \
+      "${_ssh_opts[@]}"
+  _msg_info "opts ${_opts[*]}"
+  "${_command}" \
+    "${_opts[@]}" \
     "${_args[@]}"
 }
 
 _connection_test() {
-  if "${_ssh_command}" \
+  if "${_command}" \
        -q \
        -F "${_sshcfg}" \
        -o StrictHostKeyChecking=no \
@@ -336,6 +390,10 @@ _set_overrides() {
     "command" \
     "$(_get_ssh)"
   _set_override \
+    "monitor" \
+    "port" \
+    "$(unused-local-port)"
+  _set_override \
     "target" \
     "host" \
     ""
@@ -401,9 +459,11 @@ usage:
                           Default: '$(_get "tunnel" "remote")'
      -T <proxy_address>   Specify a proxy address
      -P <proxy_port>      Specify a proxy port
-     -C <ssh_path>        Connect using a specific ssh command.
+     -C <ssh_path>        Connect using a specific ssh supporting binary,
+                          (ssh, autossh, rsync).
                           Default: '$(_get "ssh" "command")'
-
+     -m <monitor_port>    Specify monitor port when using autossh
+                          Default: '$(_get "monitor" "port")'
      -h                   This message.
      -c                   Enable color output
      -v                   Enable verbose output
@@ -442,11 +502,12 @@ _show_config() {
   _msg_info "       Tunnel remote port:   $(_get "tunnel" "remote")"
   _msg_info "            Proxy address:   $(_get "proxy" "address")"
   _msg_info "               Proxy port:   $(_get "proxy" "port")"
+  _msg_info "             Monitor Port:   $(_get "monitor" "port")"
   _msg_info "       Configuration file:   $(_get_conf_path "$(_get "target" "host")")"
   if [[ "$(_get \
           "ssh" \
           "options")" != "" ]]; then
-    _msg_info "                 SSH options:   ${ssh_options[*]}"
+    _msg_info "              SSH options:   ${ssh_options[*]}"
   fi
 }
 
@@ -456,7 +517,7 @@ _requirements
 # shellcheck disable=SC2034
 while \
   getopts \
-    't:a:d:u:p:l:r:T:P:C:cvh?' \
+    't:a:d:u:p:l:r:T:P:C:m:cvh?' \
     arg; do
   case \
     "${arg}" in
@@ -470,6 +531,7 @@ while \
     T) override_proxy_address="${OPTARG}" ;;
     P) override_proxy_port="${OPTARG}" ;;
     C) override_ssh_command="${OPTARG}" ;;
+    m) override_monitor_port="${OPTARG}" ;;
     c) override_color="y" ;;
     v) override_quiet="n" ;;
     h|?) _set_overrides && \
@@ -492,8 +554,6 @@ ssh_options=(
   "$@"
 )
 _set_overrides
-echo \
-  "loc ${tunnel_local}"
 _config_user_init \
   "$(_get \
        "app" \
@@ -548,6 +608,10 @@ _dynssh \
     _get \
       "ssh" \
       "command")" \
+   "$( \
+    _get \
+      "monitor" \
+      "port")" \
   "${ssh_options[@]}"
 
 # vim:set sw=2 sts=-1 et:
