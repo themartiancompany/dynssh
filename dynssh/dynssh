@@ -60,49 +60,25 @@ _get_conf_path() {
     "${_conf}"
 }
 
-_autossh_opts() {
-  local \
-    _ssh_opts=()
-  _ssh_opts=(
-    "$@"
-  )
-  _opts=(
-    -M "${_monitor_port}"
-    "${_ssh_opts[@]}"
-  )
+_autossh_run() {
+  AUTOSSH_PORT="${_monitor_port}" \
+  "${_command}" \
+    "${_ssh_opts[@]}" \
+    "${_args[@]}"
 }
 
-_rsync_opts() {
-  local \
-    _ssh_opts=()
-  _ssh_opts=(
-    "$@"
-  )
-  _opts=(
-    -vvv
-    -e 
-      "ssh ${_ssh_opts[*]}"
-    -az
-  )
+_rsync_run() {
+    "${_command}" \
+      -e \
+        "ssh ${_ssh_opts[*]}" \
+      -az \
+      "${_args[@]}"
 }
 
-_command_opts() {
-  local \
-    _command="${1}" \
-    _ssh_opts=() \
-    _command_name
-  shift \
-    1
-  _ssh_opts=(
-    "$@"
-  )
-  _command_name="$( \
-    basename \
-      "${_command}")"
-  if [[ "${_command_name}" != "ssh" ]]; then
-    "_${_command_name}_opts" \
-        "${_ssh_opts[@]}"
-  fi
+_ssh_run() {
+  "${_command}" \
+    "${_ssh_opts[@]}" \
+      "${_args[@]}"
 }
 
 # Local ssh resolver
@@ -121,7 +97,6 @@ _dynssh() {
     _proxy_port="${9}" \
     _command="${10}" \
     _monitor_port="${11}" \
-    _opts=() \
     _ssh_opts=() \
     _args=() \
     _msg=() \
@@ -133,7 +108,7 @@ _dynssh() {
     _cfg \
     _address
   shift \
-    10
+    11
   _args=(
     "$@"
   )
@@ -226,13 +201,10 @@ _dynssh() {
     "ssh config: $( \
       cat \
         "${_sshcfg}")"
-  _command_opts \
-      "${_command}" \
-      "${_ssh_opts[@]}"
-  _msg_info "opts ${_opts[*]}"
-  "${_command}" \
-    "${_opts[@]}" \
-    "${_args[@]}"
+  _command_name="$( \
+    basename \
+      "${_command}")"
+  "_${_command_name}_run"
 }
 
 _connection_test() {
