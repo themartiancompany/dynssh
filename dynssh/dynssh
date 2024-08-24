@@ -106,7 +106,8 @@ _dynssh() {
     _hotspot_resolver_opts=() \
     _conf \
     _cfg \
-    _address
+    _address \
+    _tmp
   shift \
     11
   _args=(
@@ -122,7 +123,10 @@ _dynssh() {
           "app" \
           "name")" \
       "${_host}")"
-  _sshcfg="${_cache}/ssh.config"
+  _tmp="$( \
+    mktemp \
+      -d)"
+  _sshcfg="${_tmp}/ssh.config"
   _ssh_opts=(
     -t
     -F "${_sshcfg}"
@@ -205,6 +209,9 @@ _dynssh() {
     basename \
       "${_command}")"
   "_${_command_name}_run"
+  rm \
+    -rf \
+    "${_tmp}"
 }
 
 _connection_test() {
