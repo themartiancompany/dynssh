@@ -545,52 +545,55 @@ _config_user_init \
    0 && \
   _usage \
    1
-_show_config
-_dynssh \
+app_opts=(
   "$( \
     _get \
       "target" \
-      "host")" \
+      "host")"
   "$( \
     _get \
       "target" \
-      "address")" \
+      "address")"
   "$( \
     _get \
       "target" \
-      "device")" \
+      "device")"
   "$( \
     _get \
       "target" \
-      "user")" \
+      "user")"
   "$( \
     _get \
       "target" \
-      "port")" \
+      "port")"
   "$( \
     _get \
       "tunnel" \
-      "local")" \
+      "local")"
   "$( \
     _get \
       "tunnel" \
-      "remote")" \
+      "remote")"
   "$( \
     _get \
       "proxy" \
-      "address")" \
+      "address")"
   "$( \
     _get \
       "proxy" \
-      "port")" \
+      "port")"
    "$( \
     _get \
       "ssh" \
-      "command")" \
+      "command")"
    "$( \
     _get \
       "monitor" \
-      "port")" \
+      "port")"
   "${ssh_options[@]}"
+)
+_show_config
+_dynssh \
+  "${app_opts[@]}"
 
 # vim:set sw=2 sts=-1 et:
