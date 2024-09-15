@@ -68,17 +68,34 @@ _autossh_run() {
 }
 
 _rsync_run() {
-    "${_command}" \
-      -e \
-        "ssh ${_ssh_opts[*]}" \
-      -az \
-      "${_args[@]}"
+  "${_command}" \
+    -e \
+      "ssh ${_ssh_opts[*]}" \
+    -az \
+    "${_args[@]}"
 }
 
 _ssh_run() {
   "${_command}" \
     "${_ssh_opts[@]}" \
       "${_args[@]}"
+}
+
+_sshfs_run() {
+  local \
+    _sshfs_opts=() \
+    _cmd=()
+  _sshfs_opts+=(
+    -F
+      "${_sshcfg}"
+  )
+  _cmd=(
+    "${_command}"
+      "${_sshfs_opts[@]}"
+      "${_args[@]}"
+  )
+  sudo \
+    "${_cmd[@]}"
 }
 
 # Local ssh resolver
@@ -127,9 +144,15 @@ _dynssh() {
     mktemp \
       -d)"
   _sshcfg="${_tmp}/ssh.config"
-  _ssh_opts=(
+  if [[ "${quiet}" == "n" ]]; then
+    _ssh_opts+=(
+      -v
+    )
+  fi
+  _ssh_opts+=(
     -t
-    -F "${_sshcfg}"
+    -F
+      "${_sshcfg}"
     -o
       StrictHostKeyChecking=no
   )
@@ -212,6 +235,8 @@ _dynssh() {
   rm \
     -rf \
     "${_tmp}"
+  return \
+    0
 }
 
 _connection_test() {
@@ -426,6 +451,8 @@ usage:
     [ssh options]
   options:
      -t <target_host>     Specify target host
+     -a <address>         Specify target address
+                          Default: '$(_get "target" "address")'
      -d <device>          Specify network device
                           Default: '$(_get "target" "device")'
      -u <user>            user to connect to.
