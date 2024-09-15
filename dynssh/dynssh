@@ -84,10 +84,27 @@ _ssh_run() {
 _sshfs_run() {
   local \
     _sshfs_opts=() \
-    _cmd=()
+    _cmd=() \
+    _uid \
+    _gid
+  _uid="$( \
+    id \
+      -u)"
+  _gid="$( \
+    id \
+      -g)"
   _sshfs_opts+=(
+    -v
     -F
       "${_sshcfg}"
+    -o
+      "uid=${_uid}"
+    -o
+      "gid=${_gid}"
+    -o
+      "auto_unmount"
+    -o
+      "allow_other"
   )
   _cmd=(
     "${_command}"
