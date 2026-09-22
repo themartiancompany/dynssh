@@ -152,10 +152,7 @@ _dynssh() {
       "${_host}")"
   _cache="$( \
     _get_cache \
-      "$( \
-        _get \
-          "app" \
-          "name")" \
+      "${app_name}" \
       "${_host}")"
   _tmp="$( \
     mktemp \
@@ -171,7 +168,7 @@ _dynssh() {
     -F
       "${_sshcfg}"
     -o
-      StrictHostKeyChecking=no
+      "StrictHostKeyChecking=no"
   )
   mkdir \
     -p \
@@ -213,7 +210,12 @@ _dynssh() {
     )
   fi
   if [[ "${_address}" == "" ]]; then 
-    _hotspot_resolver_opts=(
+    if [[ -v "HOTSPOT_RESOLVER_OPTS" ]]; then
+      _hotspot_resolver_opts+=(
+        ${HOTSPOT_RESOLVER_OPTS}
+      )
+    fi 
+    _hotspot_resolver_opts+=(
       -d 
         "${_device}"
     )
@@ -454,6 +456,7 @@ _set_overrides() {
 # $1: exit status number.
 _usage() {
   local \
+    _exit_code="${1}" \
     _usage_text
   IFS='' \
     read \
@@ -461,32 +464,38 @@ _usage() {
       -d '' \
       _usage_text << \
         ENDUSAGETEXT || true
+
+SSH client with host address auto-detection.
+
 usage:
-  $(_get "app" "name")
+
+  ${app_name}
     [options]
     <host>
-    [ssh options]
+    [ssh-options]
+
   options:
-     -t <target_host>     Specify target host
+
+     -t <target-host>     Specify target host
      -a <address>         Specify target address
-                          Default: '$(_get "target" "address")'
+                          Default: '${target_address}'
      -d <device>          Specify network device
-                          Default: '$(_get "target" "device")'
+                          Default: '${target_device}'
      -u <user>            user to connect to.
-                          Default: '$(_get "target" "user")'
+                          Default: '${target_user}'
      -p <port>            Connect through a specific port.
-                          Default: '$(_get "target" "port")'
-     -l <local_port>      Tunnel on given local port
-                          Default: '$(_get "tunnel" "local")'
-     -r <remote_port>     Tunnel on given remote port
-                          Default: '$(_get "tunnel" "remote")'
-     -T <proxy_address>   Specify a proxy address
-     -P <proxy_port>      Specify a proxy port
-     -C <ssh_path>        Connect using a specific ssh supporting binary,
+                          Default: '${target_port}'
+     -l <local-port>      Tunnel on given local port
+                          Default: '${tunnel_local}'
+     -r <remote-port>     Tunnel on given remote port
+                          Default: '${tunnel_remote}'
+     -T <proxy-address>   Specify a proxy address
+     -P <proxy-port>      Specify a proxy port
+     -C <ssh-path>        Connect using a specific ssh supporting binary,
                           (ssh, autossh, rsync).
-                          Default: '$(_get "ssh" "command")'
-     -m <monitor_port>    Specify monitor port when using autossh
-                          Default: '$(_get "monitor" "port")'
+                          Default: '${ssh_command}'
+     -m <monitor-port>    Specify monitor port when using autossh
+                          Default: '${monitor_port}'
      -h                   This message.
      -c                   Enable color output
      -v                   Enable verbose output
@@ -495,7 +504,7 @@ ENDUSAGETEXT
     '%s\n' \
     "${_usage_text}"
   exit \
-    "${1}"
+    "${_exit_code}"
 }
 
 _display_flags() {
