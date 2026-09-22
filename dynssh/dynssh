@@ -476,29 +476,37 @@ usage:
 
   options:
 
-     -t <target-host>     Specify target host
-     -a <address>         Specify target address
-                          Default: '${target_address}'
-     -d <device>          Specify network device
-                          Default: '${target_device}'
-     -u <user>            user to connect to.
-                          Default: '${target_user}'
-     -p <port>            Connect through a specific port.
-                          Default: '${target_port}'
-     -l <local-port>      Tunnel on given local port
-                          Default: '${tunnel_local}'
-     -r <remote-port>     Tunnel on given remote port
-                          Default: '${tunnel_remote}'
-     -T <proxy-address>   Specify a proxy address
-     -P <proxy-port>      Specify a proxy port
-     -C <ssh-path>        Connect using a specific ssh supporting binary,
-                          (ssh, autossh, rsync).
-                          Default: '${ssh_command}'
-     -m <monitor-port>    Specify monitor port when using autossh
-                          Default: '${monitor_port}'
-     -h                   This message.
-     -c                   Enable color output
-     -v                   Enable verbose output
+     -t <target-host>         Specify target host
+     -a <address>             Specify target address
+                              Default: '${target_address}'
+     -d <device>              Specify network device
+                              Default: '${target_device}'
+     -u <user>                user to connect to.
+                              Default: '${target_user}'
+     -p <port>                Connect through a specific port.
+                              Default: '${target_port}'
+     -l <local-port>          Tunnel on given local port
+                              Default: '${tunnel_local}'
+     -r <remote-port>         Tunnel on given remote port
+                              Default: '${tunnel_remote}'
+     -T <proxy-address>       Specify a proxy address
+     -P <proxy-port>          Specify a proxy port
+     -C <ssh-path>            Connect using a specific ssh supporting binary,
+                              (ssh, autossh, rsync).
+                              Default: '${ssh_command}'
+     -m <monitor-port>        Specify monitor port when using autossh
+                              Default: '${monitor_port}'
+
+     -h                       This message.
+     -c                       Enable color output
+     -v                       Enable verbose output
+
+  environment variable:
+
+     HOTSPOT_RESOLVER_OPTS   This variable is read to pass custom options
+                             to 'hotspot-resolver' (for example the global
+                             host option '-G').
+
 ENDUSAGETEXT
   _printf \
     '%s\n' \
