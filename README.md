@@ -52,6 +52,47 @@ library.
 It's able to connect to hosts using
 `autossh`, `sshfs`, `rsync`
 
+## Installation
+
+The tools in this source repo
+can be installed from source using GNU Make.
+
+```bash
+make \
+  install
+```
+
+The collection has been officially published
+on the the uncensorable
+[Ur](
+  https://github.com/themartiancompany/ur)
+user repository and application store as
+`dynssh`.
+The source code is published on the
+[Ethereum Virtual Machine File System](
+  https://github.com/themartiancompany/evmfs)
+so it can't possibly be taken down.
+
+To install it from there just type
+
+```bash
+ur \
+  dynssh
+```
+
+A censorable HTTP Github mirror of the recipe published there,
+containing a full list of the software dependencies needed to run the
+tools is hosted on
+[dynssh-ur](
+  https://github.com/themartiancompany/dynssh-ur).
+
+## Documentation
+
+Manuals are available in the
+[`man`](
+  https://github.com/themartiancompany/dynssh-man)
+submodule.
+
 ## License
 
 Released by Pellegrino Prevete under the terms of the
