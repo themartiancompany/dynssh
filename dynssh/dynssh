@@ -67,6 +67,15 @@ _autossh_run() {
     "${_args[@]}"
 }
 
+_sshfs_run() {
+  "${_command}" \
+    -F \
+      "${_sshcfg}" \
+    -o
+      "StrictHostKeyChecking=no"
+    "${_args[@]}"
+}
+
 _rsync_run() {
   "${_command}" \
     -e \
@@ -492,7 +501,7 @@ usage:
      -T <proxy-address>       Specify a proxy address
      -P <proxy-port>          Specify a proxy port
      -C <ssh-path>            Connect using a specific ssh supporting binary,
-                              (ssh, autossh, rsync).
+                              (ssh, autossh, rsync, sshfs).
                               Default: '${ssh_command}'
      -m <monitor-port>        Specify monitor port when using autossh
                               Default: '${monitor_port}'
