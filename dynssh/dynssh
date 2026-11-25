@@ -1,11 +1,36 @@
 #!/usr/bin/env bash
-#
-# SPDX-License-Identifier: AGPL-3.0-or-later
 
-_bin="$( \
+# SPDX-License-Identifier: AGPL-3.0
+
+#    -----------------------------------------------------
+#    Copyright © 2023, 2024 2025, 2026
+#                Pellegrino Prevete
+#
+#    All rights reserved
+#    -----------------------------------------------------
+#
+#    This program is free software: you can redistribute
+#    it and/or modify it under the terms of the
+#    GNU Affero General Public License as published by
+#    the Free Software Foundation, either version 3 of
+#    the License, or (at your option) any later version.
+#
+#    This program is distributed in the hope that it
+#    will be useful, but WITHOUT ANY WARRANTY;
+#    without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#    See the GNU Affero General Public License for
+#    more details.
+#
+#    You should have received a copy of the
+#    GNU Affero General Public License
+#    along with this program.
+#    If not, see <https://www.gnu.org/licenses/>.
+
+
+_bin="$(
   dirname \
-    "$( \
-      command \
+    "$(command \
         -v \
 	  "env")")"
 _lib="${_bin}/../lib"
@@ -48,14 +73,8 @@ _get_conf_path() {
   local \
     _dir \
     _conf
-  _dir="${HOME}/.config/$( \
-    _get \
-      "app" \
-      "name")"
-  _conf="${_dir}/$( \
-    _get \
-      "target" \
-      "host").cfg"
+  _dir="${HOME}/.config/${app_name}"
+  _conf="${_dir}/${target_host}.cfg"
   echo \
     "${_conf}"
 }
@@ -96,10 +115,10 @@ _sshfs_run() {
     _cmd=() \
     _uid \
     _gid
-  _uid="$( \
+  _uid="$(
     id \
       -u)"
-  _gid="$( \
+  _gid="$(
     id \
       -g)"
   _sshfs_opts+=(
@@ -156,14 +175,14 @@ _dynssh() {
   _args=(
     "$@"
   )
-  _conf="$( \
+  _conf="$(
     _get_conf_path \
       "${_host}")"
-  _cache="$( \
+  _cache="$(
     _get_cache \
       "${app_name}" \
       "${_host}")"
-  _tmp="$( \
+  _tmp="$(
     mktemp \
       -d)"
   _sshcfg="${_tmp}/ssh.config"
@@ -183,7 +202,7 @@ _dynssh() {
     -p \
     "${_cache}"
   if [[ "${_port}" == "" ]]; then
-    _port="$( \
+    _port="$(
       _read_settings \
         "${_conf}" \
         "${_host}" \
@@ -228,7 +247,7 @@ _dynssh() {
       -d 
         "${_device}"
     )
-    _address="$( \
+    _address="$(
       hotspot-resolver \
         "${_hotspot_resolver_opts[@]}" \
         get \
@@ -253,10 +272,10 @@ _dynssh() {
     "${_port}"
   # _connection_test
   _msg_info \
-    "ssh config: $( \
+    "ssh config: $(
       cat \
         "${_sshcfg}")"
-  _command_name="$( \
+  _command_name="$(
     basename \
       "${_command}")"
   "_${_command_name}_run"
@@ -288,15 +307,14 @@ _make_conf() {
     _conf="${2}" \
     _port="${3}"
   if [[ "${_conf}" == "" ]]; then
-    _conf="$( \
+    _conf="$(
       _get_conf_path \
         "${_host}")"
   fi
   mkdir \
     -p \
-    "$( \
-      dirname \
-        "${_conf}")"
+    "$(dirname \
+         "${_conf}")"
   _write_setting \
     "${_conf}" \
     "port" \
@@ -317,7 +335,7 @@ _check_conf() {
     _msg=() \
     _perm
   if [[ "${_conf}" == "" ]]; then
-    _conf="$( \
+    _conf="$(
       _get_conf_path \
         "${_host}")"
   fi
@@ -330,7 +348,7 @@ _check_conf() {
   if [ ! -e  "${_conf}" ]; then
     _make_conf
   fi
-  _perm="$( \
+  _perm="$(
     stat \
       -c '%a' \
       "${_conf}")"
@@ -342,8 +360,10 @@ _check_conf() {
 }
 
 _input_credentials() {
+  local \
+    _msg=()
   if [[ "${_host}" == "" ]]; then
-    _host="$( \
+    _host="$(
       hostnamectl \
         hostname)"
   fi
@@ -365,28 +385,34 @@ _input_credentials() {
     -v \
       "_port" \
     "%s\n" \
-    "$( \
-      _get \
-        "target" \
-        "port")"
+    "${target_port}"
+  _msg=(
+    "Setting local port as"
+    "target port '${_port}'."
+  )
   _msg_info \
-    "setting local port as target port ${_port}"
+    "${_msg[*]}"
   if \
     [[ \
       "${_port}" == "" ]]; then
+    _msg=(
+      "Enter port for this host:"
+    )
     printf \
       "  %s\n" \
-      "enter port for this host:"
+      "${_msg[*]}"
     while \
-      [[ \
-        "${_port}" == "" ]]; do
+      [[ "${_port}" == "" ]]; do
       read \
         -r \
-        _port
+        "_port"
     done
   fi
+  _msg=(
+    "Set port '${_port}'."
+  )
   _msg_info \
-    "Set port ${_port}"
+    "${_msg[*]}"
 }
 
 _get_ssh() {
@@ -413,6 +439,16 @@ _get_ssh() {
 }
 
 _set_overrides() {
+  if [[ -v override_quiet ]]; then
+    quiet="${override_quiet}"
+  elif [[ -z "${quiet}" ]]; then
+    quiet="y"
+  fi
+  if [[ -v override_color ]]; then
+    color="${override_color}"
+  elif [[ -z "${color}" ]]; then
+    color="n"
+  fi
   _set_override \
     "connect" \
     "date" \
@@ -449,16 +485,6 @@ _set_overrides() {
     "tunnel" \
     "remote" \
     ""
-  if [[ -v override_quiet ]]; then
-    quiet="${override_quiet}"
-  elif [[ -z "${quiet}" ]]; then
-    quiet="y"
-  fi
-  if [[ -v override_color ]]; then
-    color="${override_color}"
-  elif [[ -z "${color}" ]]; then
-    color="n"
-  fi
 }
 
 # Show help usage, with an exit status.
@@ -540,23 +566,23 @@ _display_flags() {
 # Shows configuration options.
 _show_config() {
   _msg_info "${app_name} configuration"
-  _msg_info "          Connection date:   $(_get "connect" "date")"
-  _msg_info "              SSH command:   $(_get "ssh" "command")"
-  _msg_info "                     Host:   $(_get "target" "host")"
-  _msg_info "                   Device:   $(_get "target" "device")"
-  _msg_info "                     User:   $(_get "target" "user")"
-  _msg_info "                  Address:   $(_get "target" "address")"
-  _msg_info "                     Port:   $(_get "target" "port")"
-  _msg_info "        Tunnel local port:   $(_get "tunnel" "local")"
-  _msg_info "       Tunnel remote port:   $(_get "tunnel" "remote")"
-  _msg_info "            Proxy address:   $(_get "proxy" "address")"
-  _msg_info "               Proxy port:   $(_get "proxy" "port")"
-  _msg_info "             Monitor Port:   $(_get "monitor" "port")"
-  _msg_info "       Configuration file:   $(_get_conf_path "$(_get "target" "host")")"
-  if [[ "$(_get \
-          "ssh" \
-          "options")" != "" ]]; then
-    _msg_info "              SSH options:   ${ssh_options[*]}"
+  _msg_info "          Connection date:   ${connect_date}"
+  _msg_info "              SSH command:   ${ssh_command}"
+  _msg_info "                     Host:   ${target_host}"
+  _msg_info "                   Device:   ${target_device}"
+  _msg_info "                     User:   ${target_user}"
+  _msg_info "                  Address:   ${target_address}"
+  _msg_info "                     Port:   ${target_port}"
+  _msg_info "        Tunnel local port:   ${tunnel_local}"
+  _msg_info "       Tunnel remote port:   ${tunnel_remote}"
+  _msg_info "            Proxy address:   ${proxy_address}"
+  _msg_info "               Proxy port:   ${proxy_port}"
+  _msg_info "             Monitor Port:   ${monitor_port}"
+  _msg_info "       Configuration file:   $(_get_conf_path \
+                                              "${target_host}")"
+  if [[ "${ssh_options}" != "" ]]; then
+    _msg_info \
+      "              SSH options:   ${ssh_options[*]}"
   fi
 }
 
@@ -570,33 +596,49 @@ while \
     arg; do
   case \
     "${arg}" in
-    t) override_target_host="${OPTARG}" ;;
-    a) override_target_address="${OPTARG}" ;;
-    d) override_target_device="${OPTARG}" ;;
-    u) override_target_user="${OPTARG}" ;;
-    p) override_target_port="${OPTARG}" ;;
-    l) override_tunnel_local="${OPTARG}" ;;
-    r) override_tunnel_remote="${OPTARG}" ;;
-    T) override_proxy_address="${OPTARG}" ;;
-    P) override_proxy_port="${OPTARG}" ;;
-    C) override_ssh_command="${OPTARG}" ;;
-    m) override_monitor_port="${OPTARG}" ;;
-    c) override_color="y" ;;
-    v) override_quiet="n" ;;
-    h|?) _set_overrides && \
-         _usage \
-           0 ;;
+    t)
+      override_target_host="${OPTARG}" ;;
+    a)
+      override_target_address="${OPTARG}" ;;
+    d)
+      override_target_device="${OPTARG}" ;;
+    u)
+      override_target_user="${OPTARG}" ;;
+    p)
+      override_target_port="${OPTARG}" ;;
+    l)
+      override_tunnel_local="${OPTARG}" ;;
+    r)
+      override_tunnel_remote="${OPTARG}" ;;
+    T)
+      override_proxy_address="${OPTARG}" ;;
+    P)
+      override_proxy_port="${OPTARG}" ;;
+    C)
+      override_ssh_command="${OPTARG}" ;;
+    m)
+      override_monitor_port="${OPTARG}" ;;
+    c)
+      override_color="y" ;;
+    v)
+      override_quiet="n" ;;
+    h|?)
+      _set_overrides
+      _usage \
+        0 ;;
     *)
-    _msg_error \
-      "Invalid argument '${arg}'" \
-      0
-    _usage \
-      1
-    ;;
+      _msg=(
+        "Invalid argument '${arg}'."
+      )
+      _msg_error \
+        "${_msg[*]}" \
+        0
+      _usage \
+        1 ;;
   esac
 done
 shift \
-  $(( \
+  $((
     OPTIND - 1 \
   ))
 ssh_options=(
@@ -604,62 +646,29 @@ ssh_options=(
 )
 _set_overrides
 _config_user_init \
-  "$(_get \
-       "app" \
-       "name")"
-[[ "$(_get \
-        "target" \
-        "host")" == "" ]] && \
+  "${app_name}"
+if [[ "${target_host}" == "" ]]; then
+  _msg=(
+   "The '-t' option is required."
+  )
   _msg_error \
-   "-t option is required" \
-   0 && \
+    "${_msg[*]}" \
+    0
   _usage \
    1
+fi
 app_opts=(
-  "$( \
-    _get \
-      "target" \
-      "host")"
-  "$( \
-    _get \
-      "target" \
-      "address")"
-  "$( \
-    _get \
-      "target" \
-      "device")"
-  "$( \
-    _get \
-      "target" \
-      "user")"
-  "$( \
-    _get \
-      "target" \
-      "port")"
-  "$( \
-    _get \
-      "tunnel" \
-      "local")"
-  "$( \
-    _get \
-      "tunnel" \
-      "remote")"
-  "$( \
-    _get \
-      "proxy" \
-      "address")"
-  "$( \
-    _get \
-      "proxy" \
-      "port")"
-   "$( \
-    _get \
-      "ssh" \
-      "command")"
-   "$( \
-    _get \
-      "monitor" \
-      "port")"
+  "${target_host}"
+  "${target_address}"
+  "${target_device}"
+  "${target_user}"
+  "${target_port}"
+  "${tunnel_local}"
+  "${tunnel_remote}"
+  "${proxy_address}"
+  "${proxy_port}"
+  "${ssh_command}"
+  "${monitor_port}"
   "${ssh_options[@]}"
 )
 _show_config
